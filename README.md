@@ -1,6 +1,6 @@
 # meuPiá Core – O Compilador Modular de Portugol
 
-![meuPia](assets/meuPia.png)
+![meuPia](https://github.com/meuPia/core/raw/main/assets/meuPia.png)
 
 ## 📖 Overview
 
@@ -34,12 +34,22 @@ O Core mantém apenas as bibliotecas essenciais. Funcionalidades complexas foram
 
 ## 🚀 Installation
 
-Para começar, instale o núcleo do sistema:
+A maneira mais recomendada de instalar o **meuPiá** é através do índice oficial de pacotes do Python (PyPI).
+
+No seu terminal, execute:
+
+```bash
+pip install meupia-core
+```
+
+Para Desenvolvedores (Modo Editável)
+
+Se você deseja modificar o código-fonte do compilador:
 
 ```bash
 # Clone o repositório
-git clone https://github.com/henryhamon/meuPia-core.git
-cd meuPia-core
+git clone https://github.com/meuPia/core.git
+cd core
 
 # Instale em modo editável (recomendado para dev)
 pip install -e .
