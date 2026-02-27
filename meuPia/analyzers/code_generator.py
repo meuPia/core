@@ -72,8 +72,11 @@ class CodeGenerator:
             
         self.add_line("")
         
-        if self.check_token(TokenEnum.VAR):
-            self.gen_variables()
+        while self.check_token(TokenEnum.VAR) or self.check_token(TokenEnum.FUNCAO):
+            if self.check_token(TokenEnum.VAR):
+                self.gen_variables()
+            elif self.check_token(TokenEnum.FUNCAO):
+                self.gen_function_definition()
 
         if self.check_token(TokenEnum.INICIO):
             self.advance() # INICIO
@@ -130,6 +133,9 @@ class CodeGenerator:
 
         elif self.check_token(TokenEnum.PARA):
             self.gen_para()
+
+        elif self.check_token(TokenEnum.RETORNE):
+            self.gen_retorne()
 
         else:
             self.advance() 
@@ -349,3 +355,36 @@ class CodeGenerator:
             self.advance()
             
         return "".join(expr_parts)
+
+    def gen_function_definition(self):
+        self.advance() # FUNCAO
+        func_name = self.current_lexeme()
+        self.advance() # ID
+        
+        self.advance() # (
+        
+        params = []
+        if self.check_token(TokenEnum.ID):
+            params.append(self.current_lexeme())
+            self.advance() # ID
+            while self.check_token(TokenEnum.COMMA):
+                self.advance() # ,
+                params.append(self.current_lexeme())
+                self.advance() # ID
+                
+        self.advance() # )
+        
+        self.add_line(f"def {func_name}({', '.join(params)}):")
+        self.indent_level += 1 
+        
+        while not self.check_token(TokenEnum.FIMFUNCAO):
+            self.gen_statement()
+            
+        self.indent_level -= 1
+        self.advance() # FIMFUNCAO
+        self.add_line("") # Pula uma linha para deixar o Python bonito e legível
+
+    def gen_retorne(self):
+        self.advance() # RETORNE
+        expr = self.gen_expression()
+        self.add_line(f"return {expr}")

@@ -131,3 +131,17 @@ def test_syntax_dictionary():
     parser = Parser(lexemes)
     
     parser.parse()
+
+def test_syntax_function_declaration():
+    code = [
+        'algoritmo "Func"',
+        'funcao multiplicar(a, b)',
+        '   retorne a * b',
+        'fim_funcao',
+        'inicio',
+        '   escreva(multiplicar(2, 3))',
+        'fimalgoritmo'
+    ]
+    lexemes = mock_lexemes(code)
+    parser = Parser(lexemes)
+    parser.parse()

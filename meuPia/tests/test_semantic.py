@@ -73,3 +73,35 @@ def test_semantic_method_call():
     lexemes = mock_lexemes(code)
     semantic = SemanticAnalyzer(lexemes)
     semantic.validate() # Should pass
+
+def test_semantic_function_parameters():
+    code = [
+        'algoritmo "Escopo"',
+        'funcao somar(a, b)',
+        '   retorne a + b', # 'a' e 'b' devem ser reconhecidos como válidos aqui dentro
+        'fim_funcao',
+        'inicio',
+        '   escreva(somar(1, 2))',
+        'fimalgoritmo'
+    ]
+    lexemes = mock_lexemes(code)
+    semantic = SemanticAnalyzer(lexemes)
+    semantic.validate()
+
+def test_semantic_undeclared_in_function():
+    code = [
+        'algoritmo "EscopoErro"',
+        'funcao somar(a, b)',
+        '   retorne a + c', # ERRO! A variável 'c' não existe e não é parâmetro!
+        'fim_funcao',
+        'inicio',
+        '   escreva(somar(1, 2))',
+        'fimalgoritmo'
+    ]
+    lexemes = mock_lexemes(code)
+    semantic = SemanticAnalyzer(lexemes)
+    
+    with pytest.raises(SemanticError) as excinfo:
+        semantic.validate()
+    
+    assert 'Undeclared variable "c"' in str(excinfo.value)

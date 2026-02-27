@@ -180,3 +180,19 @@ def test_gen_dictionary():
     output = compile_snippet(code)
     
     assert 'pessoa = {"nome": "Henry", "idade": 30}' in output
+
+def test_gen_function_definition():
+    code = """algoritmo "FuncGen"
+    funcao somar(a, b)
+        retorne a + b
+    fim_funcao
+    inicio
+        escreva(somar(10, 20))
+    fimalgoritmo"""
+    
+    output = compile_snippet(code)
+    
+    # Verifica se a função foi criada no Python corretamente
+    assert "def somar(a, b):" in output
+    assert "return a+b" in output
+    assert "print(somar(10, 20))" in output

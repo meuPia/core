@@ -60,6 +60,12 @@ class Parser:
     if self.check_token(TokenEnum.VAR):
       self.grammar_variable_block()
 
+    while self.check_token_any([TokenEnum.FUNCAO, TokenEnum.VAR]):
+      if self.check_token(TokenEnum.FUNCAO):
+          self.grammar_function_declaration()
+      elif self.check_token(TokenEnum.VAR):
+          self.grammar_variable_block()
+
     self.expect_token(TokenEnum.INICIO)
 
     while not self.check_token_any([TokenEnum.FIMALGORITMO, TokenEnum.END_OF_FILE]):
@@ -86,6 +92,8 @@ class Parser:
       self.grammar_command_enquanto()
     elif self.check_token(TokenEnum.PARA):
       self.grammar_command_para()
+    elif self.check_token(TokenEnum.RETORNE):
+      self.grammar_command_retorne()
     else:
       lexeme = self.current_lexeme()
       code_index = self.current_code_index()
@@ -312,3 +320,27 @@ class Parser:
     else:
       code_index = self.current_code_index()
       raise SyntacticError(f'Operando lógico inválido na linha {code_index}')
+
+  def grammar_function_declaration(self):
+    self.expect_token(TokenEnum.FUNCAO)
+    self.expect_token(TokenEnum.ID)     # Nome da função
+    self.expect_token(TokenEnum.PARAB)  # (
+    
+    # Parâmetros opcionais (ex: a, b)
+    if self.check_token(TokenEnum.ID):
+      self.expect_token(TokenEnum.ID)
+      while self.check_token(TokenEnum.COMMA):
+        self.expect_token(TokenEnum.COMMA)
+        self.expect_token(TokenEnum.ID)
+        
+    self.expect_token(TokenEnum.PARFE)  # )
+    
+    # Corpo da função
+    while not self.check_token(TokenEnum.FIMFUNCAO):
+      self.statement()
+      
+    self.expect_token(TokenEnum.FIMFUNCAO)
+
+  def grammar_command_retorne(self):
+    self.expect_token(TokenEnum.RETORNE)
+    self.grammar_arithmetic_expression() # O que ele vai retornar

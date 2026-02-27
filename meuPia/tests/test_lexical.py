@@ -89,3 +89,12 @@ def test_scan_dict_braces():
     assert len(tokens) == 2
     assert tokens[0]['token'] == TokenEnum.CHAVEA.name
     assert tokens[1]['token'] == TokenEnum.CHAVEF.name
+
+def test_scan_function_keywords():
+    line = "funcao retorne fim_funcao"
+    _, tokens = scan_line(line, 1)
+    
+    assert len(tokens) == 3
+    assert tokens[0]['token'] == TokenEnum.FUNCAO.name 
+    assert tokens[1]['token'] == TokenEnum.RETORNE.name
+    assert tokens[2]['token'] == TokenEnum.FIMFUNCAO.name

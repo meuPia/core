@@ -65,11 +65,29 @@ class SemanticAnalyzer:
   def validate_variable_usage(self):
     self.pos = 0
     in_code_block = False
+    local_vars = []
 
     while self.pos < len(self.lexeme_pairs):
       # Identify the start of the code block
       if self.check_token(TokenEnum.INICIO):
         in_code_block = True
+      elif self.check_token(TokenEnum.FUNCAO):
+        self.advance() # Passa 'funcao'
+        self.advance() # Passa o nome da função (ex: somar)
+        self.advance() # Passa o '('
+        
+        local_vars = []
+        while self.pos < len(self.lexeme_pairs) and not self.check_token(TokenEnum.PARFE):
+            if self.check_token(TokenEnum.ID):
+                local_vars.append(self.current_lexeme())
+            self.advance()
+            
+        in_code_block = True 
+        
+      elif self.check_token(TokenEnum.FIMFUNCAO):
+        in_code_block = False
+        local_vars = []
+
       elif in_code_block and self.check_token(TokenEnum.ID):
         lexeme = self.current_lexeme()
 
@@ -81,7 +99,7 @@ class SemanticAnalyzer:
 
         if is_function_call:
             pass # Allow all function calls, runtime will handle errors
-        elif not self.is_variable_declared(lexeme):
+        elif not self.is_variable_declared(lexeme) and lexeme not in local_vars:
           code_index = self.current_code_index()
           raise SemanticError(f'Undeclared variable "{lexeme}" used at line {code_index}.')
 

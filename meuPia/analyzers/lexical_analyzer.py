@@ -162,6 +162,9 @@ def match_token_keywords(line: str, startIndex: int, lineNumber: int) -> Optiona
     'inicio': TokenEnum.INICIO,
     'fimalgoritmo': TokenEnum.FIMALGORITMO,
     'usar': TokenEnum.USAR,
+    'funcao': TokenEnum.FUNCAO,
+    'retorne': TokenEnum.RETORNE,
+    'fim_funcao': TokenEnum.FIMFUNCAO,
   }
 
   for keyword, token in keywords.items():
