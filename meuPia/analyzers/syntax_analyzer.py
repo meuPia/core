@@ -251,6 +251,26 @@ class Parser:
               self.expect_token(TokenEnum.COMMA)
               self.grammar_arithmetic_expression()
       self.expect_token(TokenEnum.COLCHETEF)
+
+    elif self.check_token(TokenEnum.CHAVEA):
+      self.expect_token(TokenEnum.CHAVEA)
+      
+      # Verifica se não é um dicionário vazio {}
+      if not self.check_token(TokenEnum.CHAVEF):
+          # Lê o primeiro par -> Chave : Valor
+          self.grammar_arithmetic_expression() # Chave
+          self.expect_token(TokenEnum.COLON)   # :
+          self.grammar_arithmetic_expression() # Valor
+          
+          # Lê os próximos pares se houver vírgula
+          while self.check_token(TokenEnum.COMMA):
+              self.expect_token(TokenEnum.COMMA)   # ,
+              self.grammar_arithmetic_expression() # Chave
+              self.expect_token(TokenEnum.COLON)   # :
+              self.grammar_arithmetic_expression() # Valor
+              
+      self.expect_token(TokenEnum.CHAVEF)
+
     elif self.check_token(TokenEnum.PARAB):
       self.expect_token(TokenEnum.PARAB)
       self.grammar_arithmetic_expression()

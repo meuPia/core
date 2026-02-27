@@ -5,6 +5,8 @@ class TokenEnum(Enum):
   ATR = '<-'
   COLCHETEA = '['
   COLCHETEF = ']'
+  CHAVEA = '{'
+  CHAVEF = '}'
   DE = 'de'
   E = 'e'
   ENQUANTO = 'enquanto'

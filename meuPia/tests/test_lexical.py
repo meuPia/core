@@ -81,3 +81,11 @@ def test_scan_operators():
 def test_invalid_char():
     with pytest.raises(LexicalError):
         scan_line("var $ x", 1)
+
+def test_scan_dict_braces():
+    line = "{ }"
+    _, tokens = scan_line(line, 1)
+    
+    assert len(tokens) == 2
+    assert tokens[0]['token'] == TokenEnum.CHAVEA.name
+    assert tokens[1]['token'] == TokenEnum.CHAVEF.name

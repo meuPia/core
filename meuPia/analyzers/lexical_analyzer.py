@@ -264,6 +264,10 @@ def match_token_separators(line: str, startIndex: int, lineNumber: int) -> Optio
     return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.COMMA.name)
   if char == '.':
     return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.PONTO.name)
+  if char == '{':
+    return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.CHAVEA.name)
+  if char == '}':
+    return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.CHAVEF.name)
 
   return None 
 

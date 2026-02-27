@@ -168,3 +168,15 @@ def test_gen_plugin_import_ia():
     # Check that mapping is respected
     assert "from meupia_ia.plugin_ia import *" in output
     assert "except ImportError:" in output
+
+def test_gen_dictionary():
+    code = """algoritmo "DictGen"
+    var pessoa: inteiro
+    inicio
+    pessoa <- {"nome": "Henry", "idade": 30}
+    escreva(pessoa["nome"])
+    fimalgoritmo"""
+    
+    output = compile_snippet(code)
+    
+    assert 'pessoa = {"nome": "Henry", "idade": 30}' in output

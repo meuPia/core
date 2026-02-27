@@ -117,3 +117,17 @@ def test_syntax_complex_arrays():
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)
     parser.parse()
+
+def test_syntax_dictionary():
+    code = [
+        'algoritmo "Dict"',
+        'var d: inteiro',
+        'inicio',
+        '   d <- {}',
+        '   d <- {"nome": "Henry", "idade": 30}',
+        'fimalgoritmo'
+    ]
+    lexemes = mock_lexemes(code)
+    parser = Parser(lexemes)
+    
+    parser.parse()
