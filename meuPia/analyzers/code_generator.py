@@ -132,7 +132,7 @@ class CodeGenerator:
             self.gen_para()
 
         else:
-             self.advance() 
+            self.advance() 
 
     def gen_enquanto(self):
         self.advance() # ENQUANTO
@@ -153,6 +153,12 @@ class CodeGenerator:
     def gen_assignment_or_call(self):
         lexeme = self.current_lexeme()
         self.advance()
+
+        while self.check_token(TokenEnum.PONTO):
+            lexeme += "."
+            self.advance() # PONTO
+            lexeme += self.current_lexeme()
+            self.advance() # ID
         
         if self.check_token(TokenEnum.ATR):
             self.advance() # <-
@@ -188,10 +194,10 @@ class CodeGenerator:
         is_int = self.var_types.get(var_name) == 'inteiro'
         
         if is_int:
-             self.add_line(f"{var_name} = int(input())") 
+            self.add_line(f"{var_name} = int(input())") 
         else:
-             self.add_line(f"{var_name} = input()")
-             
+            self.add_line(f"{var_name} = input()")
+
         self.advance() # )
 
     def gen_se(self):
@@ -204,7 +210,7 @@ class CodeGenerator:
         
         # Processa bloco
         while not (self.check_token(TokenEnum.SENAO) or self.check_token(TokenEnum.FIMSE) or self.check_token(TokenEnum.FIMALGORITMO)):
-             self.gen_statement()
+            self.gen_statement()
         
         self.indent_level -= 1
         
@@ -279,7 +285,7 @@ class CodeGenerator:
             # Keywords like SE, ENTAO... should not appear in valid expression unless syntax error
             # But specific tokens like FIMALGORITMO check is good.
             if t in [TokenEnum.FIMALGORITMO.name, TokenEnum.FIMSE.name, TokenEnum.FIMPARA.name, TokenEnum.FIMENQUANTO.name, TokenEnum.ENTAO.name]:
-                 break
+                break
             
             # Lexeme mapping
             if t == TokenEnum.LOGIGUAL.name: l = "=="
@@ -294,6 +300,7 @@ class CodeGenerator:
             elif t == TokenEnum.COLCHETEA.name: l = "["
             elif t == TokenEnum.COLCHETEF.name: l = "]"
             elif t == TokenEnum.COMMA.name: l = ", "
+            elif t == TokenEnum.PONTO.name: l = "."
             elif t == TokenEnum.ATR.name: break 
             
             # Valid tokens
@@ -304,12 +311,13 @@ class CodeGenerator:
                 TokenEnum.COLCHETEA.name, TokenEnum.COLCHETEF.name, TokenEnum.COMMA.name, 
                 TokenEnum.LOGIGUAL.name, TokenEnum.LOGDIFF.name, TokenEnum.LOGMENOR.name, TokenEnum.LOGMAIOR.name,
                 TokenEnum.LOGMENORIGUAL.name, TokenEnum.LOGMAIORIGUAL.name,
-                TokenEnum.E.name, TokenEnum.OU.name, TokenEnum.NAO.name
+                TokenEnum.E.name, TokenEnum.OU.name, TokenEnum.NAO.name,
+                TokenEnum.PONTO.name
             ]
             
             # If strictly not in valid tokens, break (safety)
             if t not in valid_expr_tokens and paren_balance == 0:
-                 break
+                break
 
             # Adjacency check for implicit break (e.g. "20 ia_treinar")
             # Operands: ID, NUMINT, STRING, PARFE, COLCHETEF
@@ -318,26 +326,26 @@ class CodeGenerator:
             operands_start = [TokenEnum.ID.name, TokenEnum.NUMINT.name, TokenEnum.STRING.name, TokenEnum.PARAB.name, TokenEnum.NAO.name, TokenEnum.COLCHETEA.name]
             
             if len(expr_parts) > 0:
-                 # Need to know the type of previous token processed
-                 # We don't track it easily in expr_parts (strings).
-                 # We can peek current token and rely on knowing we just processed one.
-                 # Wait, checking adjacency requires knowing PREVIOUS token Type.
-                 pass
+                # Need to know the type of previous token processed
+                # We don't track it easily in expr_parts (strings).
+                # We can peek current token and rely on knowing we just processed one.
+                # Wait, checking adjacency requires knowing PREVIOUS token Type.
+                pass
 
             # Update prev_token_type at end of loop.
             # But I need to check NOW before consuming.
             
             if last_token_type in operands_end and t in operands_start:
-                 # Special case: Function call ID + ( is allowed.
-                 # If last was ID and current is PARAB -> ALLOW.
-                 if (last_token_type == TokenEnum.ID.name and t == TokenEnum.PARAB.name) or \
+                # Special case: Function call ID + ( is allowed.
+                # If last was ID and current is PARAB -> ALLOW.
+                if (last_token_type == TokenEnum.ID.name and t == TokenEnum.PARAB.name) or \
                     (last_token_type == TokenEnum.ID.name and t == TokenEnum.COLCHETEA.name) or \
                     (last_token_type == TokenEnum.COLCHETEF.name and t == TokenEnum.COLCHETEA.name):
-                     pass
-                 else:
-                     # Break if operand follows operand (missing operator)
-                     if paren_balance == 0:
-                         break
+                    pass
+                else:
+                    # Break if operand follows operand (missing operator)
+                    if paren_balance == 0:
+                        break
 
             expr_parts.append(l)
             last_token_type = t

@@ -52,6 +52,20 @@ def test_syntax_conditional():
     parser = Parser(lexemes)
     parser.parse()
 
+def test_syntax_object_methods():
+    code = [
+        'algoritmo "Objetos"',
+        'var texto: string',
+        'inicio',
+        '   texto <- "henry"',
+        '   escreva(texto.upper())',
+        '   texto.replace("h", "H")',
+        'fimalgoritmo'
+    ]
+    lexemes = mock_lexemes(code)
+    parser = Parser(lexemes)
+    parser.parse()
+
 def test_syntax_error_missing_tokens():
     code = [
         'algoritmo "Erro"',

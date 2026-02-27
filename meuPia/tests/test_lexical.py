@@ -20,7 +20,7 @@ def test_scan_keywords():
         assert token_data['token'] == expected[i]
 
 def test_scan_symbols():
-    line = "[ ] ( ) <- , :"
+    line = "[ ] ( ) <- , : ."
     _, tokens = scan_line(line, 1)
     
     expected = [
@@ -30,10 +30,11 @@ def test_scan_symbols():
         TokenEnum.PARFE.name,
         TokenEnum.ATR.name,
         TokenEnum.COMMA.name,
-        TokenEnum.COLON.name
+        TokenEnum.COLON.name,
+        TokenEnum.PONTO.name
     ]
     
-    assert len(tokens) == 7
+    assert len(tokens) == 8
     for i, token_data in enumerate(tokens):
         assert token_data['token'] == expected[i]
 

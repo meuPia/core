@@ -43,6 +43,7 @@ class TokenEnum(Enum):
   VAR = 'var'
   COMMA = ','
   COLON = ':'
+  PONTO = '.'
   INICIO = 'inicio'
   FIMALGORITMO = 'fimalgoritmo'
   USAR = 'usar'

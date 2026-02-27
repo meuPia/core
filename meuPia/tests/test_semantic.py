@@ -61,3 +61,15 @@ def test_semantic_bypass_function_call():
     lexemes = mock_lexemes(code)
     semantic = SemanticAnalyzer(lexemes)
     semantic.validate() # Should pass
+
+def test_semantic_method_call():
+    code = [
+        'algoritmo "Metodo"',
+        'var texto: string',
+        'inicio',
+        '   texto.upper()', # "upper" deve ser ignorado pela checagem de variáveis pois é seguido de ()
+        'fimalgoritmo'
+    ]
+    lexemes = mock_lexemes(code)
+    semantic = SemanticAnalyzer(lexemes)
+    semantic.validate() # Should pass

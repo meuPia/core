@@ -73,19 +73,9 @@ class Parser:
       raise SyntacticError(f'Código inesperado após "fimalgoritmo": "{extra_lexeme}" na linha {code_index}')
 
   def statement(self):
-    # --- ALTERAÇÃO PRINCIPAL ---
+    # A função grammar_id_statement agora cuida de TUDO (atribuição, métodos encadeados, etc)
     if self.check_token(TokenEnum.ID):
-      # Verifica o que vem depois do ID para decidir
-      next_tok = self.peek_next_token()
-      
-      if next_tok == TokenEnum.ATR.name:
-        self.grammar_var_assignment()
-      elif next_tok == TokenEnum.PARAB.name:
-        self.grammar_function_call()
-      else:
-        # Fallback para erro ou atribuição mal formada
-        self.grammar_var_assignment()
-
+      self.grammar_id_statement()
     elif self.check_token(TokenEnum.ESCREVA):
       self.grammar_command_escreva()
     elif self.check_token(TokenEnum.LEIA):
@@ -101,25 +91,33 @@ class Parser:
       code_index = self.current_code_index()
       raise SyntacticError(f'Token inesperado "{lexeme}" na linha {code_index}')
 
+  def grammar_id_statement(self):
+    self.expect_token(TokenEnum.ID)
+    
+    # Consome os métodos/propriedades encadeados (ex: pessoa.endereco.rua)
+    while self.check_token(TokenEnum.PONTO):
+      self.expect_token(TokenEnum.PONTO)
+      self.expect_token(TokenEnum.ID)
+      
+    if self.check_token(TokenEnum.ATR):
+      self.expect_token(TokenEnum.ATR)
+      self.grammar_arithmetic_expression()
+      
+    elif self.check_token(TokenEnum.PARAB):
+      self.expect_token(TokenEnum.PARAB)
+      if not self.check_token(TokenEnum.PARFE):
+          self.grammar_arithmetic_expression()
+          while self.check_token(TokenEnum.COMMA):
+              self.expect_token(TokenEnum.COMMA)
+              self.grammar_arithmetic_expression()
+      self.expect_token(TokenEnum.PARFE)
+    else:
+      code_index = self.current_code_index()
+      raise SyntacticError(f'Comando inválido após identificador na linha {code_index}')
+
   # ----------------
   # Gramáticas
   # ----------------
-  
-  # --- NOVA GRAMÁTICA: CHAMADA DE FUNÇÃO ---
-  def grammar_function_call(self):
-    self.expect_token(TokenEnum.ID)     # Nome da função (ex: ia_treinar)
-    self.expect_token(TokenEnum.PARAB)  # (
-    
-    # Se não fechar parenteses logo, temos argumentos
-    if not self.check_token(TokenEnum.PARFE):
-        self.grammar_arithmetic_expression() # Primeiro argumento
-        
-        # Enquanto houver vírgula, temos mais argumentos
-        while self.check_token(TokenEnum.COMMA):
-            self.expect_token(TokenEnum.COMMA)
-            self.grammar_arithmetic_expression()
-
-    self.expect_token(TokenEnum.PARFE)  # )
 
   def grammar_variable_block(self):
     self.expect_token(TokenEnum.VAR)
@@ -135,20 +133,10 @@ class Parser:
       self.expect_token(TokenEnum.COLON)
       self.expect_token(TokenEnum.TIPO)
 
-  def grammar_var_assignment(self):
-    self.expect_token(TokenEnum.ID)
-    self.expect_token(TokenEnum.ATR)
-    self.grammar_arithmetic_expression()
-
   def grammar_command_escreva(self):
     self.expect_token(TokenEnum.ESCREVA)
     self.expect_token(TokenEnum.PARAB)
-
-    # Termos suportados por escreva
-    # Nota: Poderíamos expandir aqui para aceitar expressões completas no futuro
-    # Termos suportados por escreva
     self.grammar_arithmetic_expression()
-
     self.expect_token(TokenEnum.PARFE)
 
   def grammar_command_leia(self):
@@ -227,14 +215,29 @@ class Parser:
 
   def grammar_arithmetic_term(self):
     if self.check_token(TokenEnum.ID):
-      if self.peek_next_token() == TokenEnum.PARAB.name:
-        self.grammar_function_call()
+      self.expect_token(TokenEnum.ID)
+      
+      # Aceita métodos/propriedades encadeados em expressões (ex: escreva(texto.upper()))
+      while self.check_token(TokenEnum.PONTO):
+          self.expect_token(TokenEnum.PONTO)
+          self.expect_token(TokenEnum.ID)
+          
+      if self.check_token(TokenEnum.PARAB):
+          # É uma chamada de método que retorna valor
+          self.expect_token(TokenEnum.PARAB)
+          if not self.check_token(TokenEnum.PARFE):
+              self.grammar_arithmetic_expression()
+              while self.check_token(TokenEnum.COMMA):
+                  self.expect_token(TokenEnum.COMMA)
+                  self.grammar_arithmetic_expression()
+          self.expect_token(TokenEnum.PARFE)
       else:
-        self.expect_token(TokenEnum.ID)
-        while self.check_token(TokenEnum.COLCHETEA):
-            self.expect_token(TokenEnum.COLCHETEA)
-            self.grammar_arithmetic_expression()
-            self.expect_token(TokenEnum.COLCHETEF)
+          # É apenas uma variável/propriedade (ex: pessoa.idade)
+          while self.check_token(TokenEnum.COLCHETEA):
+              self.expect_token(TokenEnum.COLCHETEA)
+              self.grammar_arithmetic_expression()
+              self.expect_token(TokenEnum.COLCHETEF)
+
     elif self.check_token(TokenEnum.NUMINT):
       self.expect_token(TokenEnum.NUMINT)
     elif self.check_token(TokenEnum.STRING):
@@ -254,7 +257,6 @@ class Parser:
       self.expect_token(TokenEnum.PARFE)
     else:
       code_index = self.current_code_index()
-      # Aqui entra um ponto de melhoria futuro: Suporte a listas [1,2] exigiria alteração no TokenEnum primeiro
       raise SyntacticError(f'Esperado identificador ou valor na expressão, linha {code_index}')
 
   def grammar_logic_expression(self):
@@ -285,16 +287,8 @@ class Parser:
         raise SyntacticError(f'Faltando operador de comparação na linha {code_index}')
 
   def grammar_logic_operand(self):
-    if self.check_token(TokenEnum.ID):
-      self.expect_token(TokenEnum.ID)
-    elif self.check_token(TokenEnum.NUMINT):
-      self.expect_token(TokenEnum.NUMINT)
-    elif self.check_token(TokenEnum.STRING):
-      self.expect_token(TokenEnum.STRING)
-    elif self.check_token(TokenEnum.PARAB):
-      self.expect_token(TokenEnum.PARAB)
-      self.grammar_logic_expression()
-      self.expect_token(TokenEnum.PARFE)
+    if self.check_token_any([TokenEnum.ID, TokenEnum.NUMINT, TokenEnum.STRING, TokenEnum.PARAB]):
+        self.grammar_arithmetic_term()
     else:
       code_index = self.current_code_index()
       raise SyntacticError(f'Operando lógico inválido na linha {code_index}')

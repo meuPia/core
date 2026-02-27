@@ -262,8 +262,10 @@ def match_token_separators(line: str, startIndex: int, lineNumber: int) -> Optio
     return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.COLON.name)
   if char == ',':
     return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.COMMA.name)
+  if char == '.':
+    return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.PONTO.name)
 
-  return None  # Not a valid standalone identifier
+  return None 
 
 def match_token_identifier(line: str, startIndex: int, lineNumber: int) -> Optional[TokenMatch]:
   char = line[startIndex]

@@ -82,6 +82,18 @@ def test_gen_function_call_ia():
     output = compile_snippet(code)
     assert "ia_treinar(dados)" in output
 
+def test_gen_object_methods():
+    code = """algoritmo "Obj"
+    var lista: string
+    inicio
+    lista <- "a,b,c"
+    escreva(lista.split(","))
+    lista.append("d")
+    fimalgoritmo"""
+    output = compile_snippet(code)
+    assert 'print(lista.split(","))' in output
+    assert 'lista.append("d")' in output
+
 def test_gen_enquanto():
     code = """algoritmo "While"
     var x: inteiro

@@ -1,15 +1,19 @@
 import os
+import sys # <-- Adicione esta linha no topo
 from .analyzers import lexical_analyzer
 from .analyzers import syntax_analyzer
 from .analyzers import semantic_analyzer
 from .analyzers.code_generator import CodeGenerator
 
-INPUT_FILE_NAME = 'input/missao_ia.por'
-
 def main(input_file: str = None, output_path: str = None):
     try:
         if input_file is None:
-            input_file = INPUT_FILE_NAME
+            if len(sys.argv) > 1:
+                input_file = sys.argv[1]
+            else:
+                print("Erro: Nenhum arquivo informado.")
+                print("Uso correto: meupia <arquivo.por>")
+                return # Sai do programa graciosamente
         
         full_path = input_file
         filename_only = os.path.basename(full_path)
