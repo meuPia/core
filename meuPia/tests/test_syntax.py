@@ -17,7 +17,7 @@ def test_syntax_full_algorithm():
         '   x = 10',
         '   y = 20',
         '   escreva(x + y)',
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)
@@ -31,7 +31,7 @@ def test_syntax_loop():
         '   para i de 1 ate 10 faca',
         '       escreva(i)',
         '   fim_para',
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)
@@ -46,7 +46,7 @@ def test_syntax_conditional():
         '   senao',
         '       escreva("Menor")',
         '   fim_se',
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)
@@ -60,7 +60,7 @@ def test_syntax_object_methods():
         '   texto = "henry"',
         '   escreva(texto.upper())',
         '   texto.replace("h", "H")',
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)
@@ -73,7 +73,7 @@ def test_syntax_error_missing_tokens():
         '   se x > 10', # Missing entao
         '       escreva("Erro")',
         '   fim_se',
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)
@@ -86,7 +86,7 @@ def test_syntax_error_invalid_var_block():
         'algoritmo "ErroVar"',
         'var x', # Missing type
         'inicio',
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)
@@ -99,7 +99,7 @@ def test_syntax_nested_arrays():
         'var m: inteiro',
         'inicio',
         '   m = [[1,2], [3,4]]',
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)
@@ -112,7 +112,7 @@ def test_syntax_complex_arrays():
         'inicio',
         '   m = [[1, 2], [3, 4]]',
         '   escreva(m[0][1])',
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)
@@ -125,7 +125,7 @@ def test_syntax_dictionary():
         'inicio',
         '   d = {}',
         '   d = {"nome": "Henry", "idade": 30}',
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)
@@ -140,7 +140,7 @@ def test_syntax_function_declaration():
         'fim_funcao',
         'inicio',
         '   escreva(multiplicar(2, 3))',
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)
@@ -153,7 +153,7 @@ def test_syntax_direct_indexing_assignment():
         'inicio',
         '   lista = 10',
         '   dicionario["nome"] = "Henry"',
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)

@@ -15,7 +15,7 @@ def test_semantic_valid_variable_usage():
         'var x: inteiro',
         'inicio',
         '   x <- 10',
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     semantic = SemanticAnalyzer(lexemes)
@@ -26,7 +26,7 @@ def test_semantic_undeclared_variable():
         'algoritmo "Invalid"',
         'inicio',
         '   x <- 10', # x is undeclared
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     semantic = SemanticAnalyzer(lexemes)
@@ -41,7 +41,7 @@ def test_semantic_double_declaration():
         'algoritmo "Double"',
         'var x, x: inteiro',
         'inicio',
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     semantic = SemanticAnalyzer(lexemes)
@@ -56,7 +56,7 @@ def test_semantic_bypass_function_call():
         'algoritmo "Func"',
         'inicio',
         '   ia_treinar()', # Function call, declared var check should bypass
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     semantic = SemanticAnalyzer(lexemes)
@@ -68,7 +68,7 @@ def test_semantic_method_call():
         'var texto: string',
         'inicio',
         '   texto.upper()', # "upper" deve ser ignorado pela checagem de variáveis pois é seguido de ()
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     semantic = SemanticAnalyzer(lexemes)
@@ -82,7 +82,7 @@ def test_semantic_function_parameters():
         'fim_funcao',
         'inicio',
         '   escreva(somar(1, 2))',
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     semantic = SemanticAnalyzer(lexemes)
@@ -96,7 +96,7 @@ def test_semantic_undeclared_in_function():
         'fim_funcao',
         'inicio',
         '   escreva(somar(1, 2))',
-        'fimalgoritmo'
+        'fim_algoritmo'
     ]
     lexemes = mock_lexemes(code)
     semantic = SemanticAnalyzer(lexemes)

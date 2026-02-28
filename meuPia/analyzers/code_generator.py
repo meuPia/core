@@ -163,7 +163,14 @@ class CodeGenerator:
         while self.check_token(TokenEnum.PONTO):
             lexeme += "."
             self.advance() # PONTO
-            lexeme += self.current_lexeme()
+
+            metodo = self.current_lexeme()
+            if metodo == "adicionar": metodo = "append"
+            elif metodo == "pegar": metodo = "get"
+            elif metodo == "atualizar": metodo = "update"
+            
+            lexeme += metodo
+
             self.advance() # ID
         
         while self.check_token(TokenEnum.COLCHETEA):
@@ -305,7 +312,12 @@ class CodeGenerator:
                 break
             
             # Lexeme mapping
-            if t == TokenEnum.LOGIGUAL.name: l = "=="
+            if t == TokenEnum.ID.name:
+                if l == "tamanho": l = "len"
+                elif l == "adicionar": l = "append"
+                elif l == "pegar": l = "get"
+                elif l == "atualizar": l = "update"
+            elif t == TokenEnum.LOGIGUAL.name: l = "=="
             elif t == TokenEnum.ATR.name: l = "=="
             elif t == TokenEnum.LOGDIFF.name: l = "!="
             elif t == TokenEnum.LOGMENOR.name: l = "<"

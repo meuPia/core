@@ -5,8 +5,8 @@ alt, i : inteiro
 inicio
     escreva("Iniciando Missão IA...")
     
-    dados <- [[100, 1], [200, 0]]
-    labels <- [1, 0]
+    dados = [[100, 1], [200, 0]]
+    labels = [1, 0]
     
     ia_definir_dados(dados, labels)
     ia_treinar(dados, labels)
@@ -17,7 +17,7 @@ inicio
     ksp_conectar()
     
     para i de 1 ate 5 faca
-        alt <- ksp_obter_altitude()
+        alt = ksp_obter_altitude()
         escreva("Altitude: ")
     escreva(alt)
         
@@ -27,4 +27,4 @@ inicio
         fim_se
     fim_para
     
-fimalgoritmo
+fim_algoritmo

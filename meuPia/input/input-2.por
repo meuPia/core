@@ -2,7 +2,7 @@ algoritmo "verifica_entrada_festa"
 var
   idade, maioridade, tem_autorizacao: inteiro
 inicio
-  maioridade <- 18
+  maioridade = 18
 
   escreva("Digite sua idade: ")
   leia(idade)
@@ -15,4 +15,4 @@ inicio
   senão
     escreva("Entrada permitida. Boa festa!")
   fim_se
-fimalgoritmo
+fim_algoritmo

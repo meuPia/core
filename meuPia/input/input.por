@@ -12,10 +12,10 @@ escreva("Digite a idade da primeira pessoa: ")
   escreva("Digite a idade da terceira pessoa: ")
   leia(idade3)
 
-  media_idade <- (idade1 + idade2 + idade3) / 3
+  media_idade = (idade1 + idade2 + idade3) / 3
 
   escreva("\n")
   escreva("A média das idades é: ")
   escreva(media_idade)
   escreva(" ano(s)")
-fimalgoritmo
+fim_algoritmo
