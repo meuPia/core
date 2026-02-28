@@ -49,6 +49,10 @@ class SemanticAnalyzer:
       # Identify the start of the var block
       if self.check_token(TokenEnum.VAR):
         in_var_block = True
+        
+      elif self.check_token(TokenEnum.FUNCAO):
+        in_var_block = False
+        
       elif self.check_token(TokenEnum.INICIO):
         break
       elif in_var_block and self.check_token(TokenEnum.ID):
