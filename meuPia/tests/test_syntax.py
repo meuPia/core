@@ -14,8 +14,8 @@ def test_syntax_full_algorithm():
         'algoritmo "Teste"',
         'var x, y : inteiro',
         'inicio',
-        '   x <- 10',
-        '   y <- 20',
+        '   x = 10',
+        '   y = 20',
         '   escreva(x + y)',
         'fimalgoritmo'
     ]
@@ -57,7 +57,7 @@ def test_syntax_object_methods():
         'algoritmo "Objetos"',
         'var texto: string',
         'inicio',
-        '   texto <- "henry"',
+        '   texto = "henry"',
         '   escreva(texto.upper())',
         '   texto.replace("h", "H")',
         'fimalgoritmo'
@@ -98,7 +98,7 @@ def test_syntax_nested_arrays():
         'algoritmo "Matrix"',
         'var m: inteiro',
         'inicio',
-        '   m <- [[1,2], [3,4]]',
+        '   m = [[1,2], [3,4]]',
         'fimalgoritmo'
     ]
     lexemes = mock_lexemes(code)
@@ -110,7 +110,7 @@ def test_syntax_complex_arrays():
         'algoritmo "Matrix"',
         'var m: inteiro',
         'inicio',
-        '   m <- [[1, 2], [3, 4]]',
+        '   m = [[1, 2], [3, 4]]',
         '   escreva(m[0][1])',
         'fimalgoritmo'
     ]
@@ -123,8 +123,8 @@ def test_syntax_dictionary():
         'algoritmo "Dict"',
         'var d: inteiro',
         'inicio',
-        '   d <- {}',
-        '   d <- {"nome": "Henry", "idade": 30}',
+        '   d = {}',
+        '   d = {"nome": "Henry", "idade": 30}',
         'fimalgoritmo'
     ]
     lexemes = mock_lexemes(code)
@@ -145,3 +145,16 @@ def test_syntax_function_declaration():
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)
     parser.parse()
+
+def test_syntax_direct_indexing_assignment():
+    code = [
+        'algoritmo "Index"',
+        'var lista: inteiro',
+        'inicio',
+        '   lista = 10',
+        '   dicionario["nome"] = "Henry"',
+        'fimalgoritmo'
+    ]
+    lexemes = mock_lexemes(code)
+    parser = Parser(lexemes)
+    parser.parse() # Deve falhar aqui

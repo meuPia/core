@@ -196,3 +196,11 @@ def test_gen_function_definition():
     assert "def somar(a, b):" in output
     assert "return a+b" in output
     assert "print(somar(10, 20))" in output
+
+def test_gen_direct_assignment():
+    code = """algoritmo "GenIndex"
+    inicio
+        lista = 99
+    fimalgoritmo"""
+    output = compile_snippet(code)
+    assert "lista = 99" in output

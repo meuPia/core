@@ -106,6 +106,11 @@ class Parser:
     while self.check_token(TokenEnum.PONTO):
       self.expect_token(TokenEnum.PONTO)
       self.expect_token(TokenEnum.ID)
+
+    while self.check_token(TokenEnum.COLCHETEA):
+      self.expect_token(TokenEnum.COLCHETEA)
+      self.grammar_arithmetic_expression()
+      self.expect_token(TokenEnum.COLCHETEF)
       
     if self.check_token(TokenEnum.ATR):
       self.expect_token(TokenEnum.ATR)

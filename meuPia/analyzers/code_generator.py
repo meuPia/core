@@ -166,6 +166,13 @@ class CodeGenerator:
             lexeme += self.current_lexeme()
             self.advance() # ID
         
+        while self.check_token(TokenEnum.COLCHETEA):
+            lexeme += "["
+            self.advance() # Consome '['
+            lexeme += self.gen_expression() # Gera o índice (ex: 0 ou variável)
+            lexeme += "]"
+            self.advance() # Consome ']' (o gen_expression para antes dele)
+        
         if self.check_token(TokenEnum.ATR):
             self.advance() # <-
             expr = self.gen_expression()
@@ -299,6 +306,7 @@ class CodeGenerator:
             
             # Lexeme mapping
             if t == TokenEnum.LOGIGUAL.name: l = "=="
+            elif t == TokenEnum.ATR.name: l = "=="
             elif t == TokenEnum.LOGDIFF.name: l = "!="
             elif t == TokenEnum.LOGMENOR.name: l = "<"
             elif t == TokenEnum.LOGMAIOR.name: l = ">"

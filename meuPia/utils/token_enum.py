@@ -2,7 +2,7 @@ from enum import Enum
 
 class TokenEnum(Enum):
   ATE = 'até'
-  ATR = '<-'
+  ATR = '='
   COLCHETEA = '['
   COLCHETEF = ']'
   CHAVEA = '{'

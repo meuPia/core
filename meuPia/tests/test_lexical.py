@@ -20,7 +20,7 @@ def test_scan_keywords():
         assert token_data['token'] == expected[i]
 
 def test_scan_symbols():
-    line = "[ ] ( ) <- , : ."
+    line = "[ ] ( ) = , : ."
     _, tokens = scan_line(line, 1)
     
     expected = [
@@ -98,3 +98,10 @@ def test_scan_function_keywords():
     assert tokens[0]['token'] == TokenEnum.FUNCAO.name 
     assert tokens[1]['token'] == TokenEnum.RETORNE.name
     assert tokens[2]['token'] == TokenEnum.FIMFUNCAO.name
+    
+def test_scan_assignment_equal():
+    line = "x = 10"
+    _, tokens = scan_line(line, 1)
+    
+    assert tokens[1]['token'] == TokenEnum.ATR.name
+    assert tokens[1]['lexeme'] == "="
