@@ -165,6 +165,8 @@ def match_token_keywords(line: str, startIndex: int, lineNumber: int) -> Optiona
     'funcao': TokenEnum.FUNCAO,
     'retorne': TokenEnum.RETORNE,
     'fim_funcao': TokenEnum.FIMFUNCAO,
+    'continue': TokenEnum.CONTINUE,
+    'interrompa': TokenEnum.INTERROMPA,
   }
 
   for keyword, token in keywords.items():
@@ -176,20 +178,21 @@ def match_token_keywords(line: str, startIndex: int, lineNumber: int) -> Optiona
   return None  # Not a match
 
 def match_token_atr(line: str, startIndex: int, lineNumber: int) -> Optional[TokenMatch]:
-  if line[startIndex] != '<':
-    return None  # Not a match
-  
+  char = line[startIndex]
   next_char = line[startIndex + 1] if startIndex + 1 < len(line) else None
-  if (next_char != '-'):
-    return None  # Not a match
+  if char == '<' and next_char == '-':
+    return TokenMatch(start=startIndex, end=startIndex + 2, replacement=TokenEnum.ATR.name)
+  if char == '=' and next_char != '=':
+    return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.ATR.name)
   
-  return TokenMatch(start=startIndex, end=startIndex + 2, replacement=TokenEnum.ATR.name)
+  return None
 
 def match_token_logoperators(line: str, startIndex: int, lineNumber: int) -> Optional[TokenMatch]:
   char = line[startIndex]
   next_char = line[startIndex + 1] if startIndex + 1 < len(line) else None
-  
-  # Multi-character logical operators
+
+  if char == '=' and next_char == '=':
+    return TokenMatch(start=startIndex, end=startIndex + 2, replacement=TokenEnum.LOGIGUAL.name)
   if char == '<' and next_char == '>':
     return TokenMatch(start=startIndex, end=startIndex + 2, replacement=TokenEnum.LOGDIFF.name)
   if char == '<' and next_char == '=':
@@ -197,9 +200,6 @@ def match_token_logoperators(line: str, startIndex: int, lineNumber: int) -> Opt
   if char == '>' and next_char == '=':
     return TokenMatch(start=startIndex, end=startIndex + 2, replacement=TokenEnum.LOGMAIORIGUAL.name)
   
-  # Single-character logical operators
-  if char == '=':
-    return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.LOGIGUAL.name)
   if char == '<':
     return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.LOGMENOR.name)
   if char == '>':

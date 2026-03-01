@@ -53,3 +53,5 @@ class TokenEnum(Enum):
   FIMALGORITMO = 'fim_algoritmo'
   USAR = 'usar'
   END_OF_FILE = '__EOF__'
+  CONTINUE = 'continue'
+  INTERROMPA = 'interrompa'

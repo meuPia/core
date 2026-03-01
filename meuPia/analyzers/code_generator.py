@@ -137,8 +137,16 @@ class CodeGenerator:
         elif self.check_token(TokenEnum.RETORNE):
             self.gen_retorne()
 
+        elif self.check_token(TokenEnum.CONTINUE):
+            self.advance()
+            self.add_line("continue")
+
+        elif self.check_token(TokenEnum.INTERROMPA):
+            self.advance()
+            self.add_line("break")
+
         else:
-            self.advance() 
+            self.advance()
 
     def gen_enquanto(self):
         self.advance() # ENQUANTO
@@ -318,7 +326,6 @@ class CodeGenerator:
                 elif l == "pegar": l = "get"
                 elif l == "atualizar": l = "update"
             elif t == TokenEnum.LOGIGUAL.name: l = "=="
-            elif t == TokenEnum.ATR.name: l = "=="
             elif t == TokenEnum.LOGDIFF.name: l = "!="
             elif t == TokenEnum.LOGMENOR.name: l = "<"
             elif t == TokenEnum.LOGMAIOR.name: l = ">"

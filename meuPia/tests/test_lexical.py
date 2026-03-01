@@ -58,7 +58,7 @@ def test_scan_identifiers():
     assert tokens[0]['lexeme'] == 'variavel_1'
 
 def test_scan_operators():
-    line = "+ - * / > < >= <= = <>"
+    line = "+ - * / > < >= <= == <>"
     _, tokens = scan_line(line, 1)
     
     expected = [

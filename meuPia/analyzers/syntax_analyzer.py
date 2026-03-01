@@ -94,6 +94,10 @@ class Parser:
       self.grammar_command_para()
     elif self.check_token(TokenEnum.RETORNE):
       self.grammar_command_retorne()
+    elif self.check_token(TokenEnum.CONTINUE):
+      self.expect_token(TokenEnum.CONTINUE)
+    elif self.check_token(TokenEnum.INTERROMPA):
+      self.expect_token(TokenEnum.INTERROMPA)
     else:
       lexeme = self.current_lexeme()
       code_index = self.current_code_index()
