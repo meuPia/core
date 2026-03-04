@@ -285,3 +285,24 @@ def test_gen_deque_methods():
     assert "fila.pop()" in output
     assert "fila.extend([30, 40])" in output
     assert "fila.clear()" in output
+
+def test_gen_plugin_import():
+    code = """algoritmo "Plugin"
+    usar "maker" 
+    inicio
+    fim_algoritmo"""
+    
+    output = compile_snippet(code)
+    assert "from meupia_maker.plugin_iot import *" in output
+    assert "except ImportError:" in output
+
+def test_gen_local_file_import():
+    code = """algoritmo "ImportLocal"
+    usar "meus_calculos"
+    inicio
+    fim_algoritmo"""
+    
+    output = compile_snippet(code)
+    
+    assert "from meus_calculos import *" in output
+    assert "O ficheiro local 'meus_calculos' não foi encontrado" in output

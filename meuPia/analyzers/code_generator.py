@@ -48,29 +48,38 @@ class CodeGenerator:
             self.imports.append(plugin_name)
             self.advance() # "NOME_DO_PLUGIN"
         
-
         # Mapeamento: "comando usar" -> "linha de import python"
         PLUGIN_IMPORT_MAP = {
-            "ia": "from meupia_ia.plugin_ia import *",       # Caminho explícito para o novo padrão
-            "maker": "from meupia_maker.plugin_iot import *", # (Ajuste se necessário, ou mantenha genérico)
+            "ia": "from meupia_ia.plugin_ia import *",
+            "maker": "from meupia_maker.plugin_iot import *",
             "espacial": "from meupia_espacial.plugin_ksp import *"
         }
 
         for plugin in self.imports:
-            # Tenta pegar do mapa, se não existir, usa o padrão 'meupia_{plugin}'
-            import_stmt = PLUGIN_IMPORT_MAP.get(plugin, f"from meupia_{plugin} import *")
+            if plugin in PLUGIN_IMPORT_MAP:
+                import_stmt = PLUGIN_IMPORT_MAP[plugin]
+                
+                self.add_line(f"try:")
+                self.indent_level += 1
+                self.add_line(f"{import_stmt}")
+                self.indent_level -= 1
+                self.add_line(f"except ImportError:")
+                self.indent_level += 1
+                self.add_line(f"print(\"Erro: O plugin '{plugin}' não está instalado. Execute: mpgp instale {plugin}\")")
+                self.add_line(f"sys.exit(1)")
+                self.indent_level -= 1
             
-            self.add_line(f"try:")
-            self.indent_level += 1
-            self.add_line(f"{import_stmt}")
-            self.indent_level -= 1
-            self.add_line(f"except ImportError:")
-            self.indent_level += 1
-            # Usando 'mpgp instale' conforme nomenclatura do mpgp.py
-            self.add_line(f"print(\"Erro: O plugin '{plugin}' não está instalado. Execute: mpgp instale {plugin}\")")
-            self.add_line(f"sys.exit(1)")
-            self.indent_level -= 1
-            
+            else:
+                self.add_line(f"try:")
+                self.indent_level += 1
+                self.add_line(f"from {plugin} import *")
+                self.indent_level -= 1
+                self.add_line(f"except ImportError:")
+                self.indent_level += 1
+                self.add_line(f"print(\"Erro: O ficheiro local '{plugin}' não foi encontrado.\")")
+                self.add_line(f"sys.exit(1)")
+                self.indent_level -= 1
+
         self.add_line("")
         
         while self.check_token(TokenEnum.VAR) or self.check_token(TokenEnum.FUNCAO) or self.check_token(TokenEnum.CLASSE):
