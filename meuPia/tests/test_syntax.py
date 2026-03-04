@@ -158,3 +158,39 @@ def test_syntax_direct_indexing_assignment():
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)
     parser.parse() # Deve falhar aqui
+
+def test_syntax_deque_methods():
+    code = [
+        'algoritmo "FilaDupla"',
+        'var f: inteiro',
+        'inicio',
+        '   f = filaDupla()',
+        '   f.inserirInicio(10)',
+        '   f.expandir([20, 30])',
+        '   f.removerFim()',
+        '   f.removerInicio()',
+        '   f.limpar()',
+        'fim_algoritmo'
+    ]
+    lexemes = mock_lexemes(code)
+    parser = Parser(lexemes)
+    parser.parse()
+
+def test_syntax_oop_class():
+    code = [
+        'algoritmo "OOP"',
+        'classe Animal',
+        '   metodo falar(som)',
+        '       escreva(som)',
+        '   fim_funcao',
+        'fim_classe',
+        'var',
+        '   meu_pet: string',
+        'inicio',
+        '   meu_pet = novo Animal()',
+        '   meu_pet.falar("Miau")',
+        'fim_algoritmo'
+    ]
+    lexemes = mock_lexemes(code)
+    parser = Parser(lexemes)
+    parser.parse()

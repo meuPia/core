@@ -42,8 +42,6 @@ class TokenEnum(Enum):
   SENAO = 'senão'
   STRING = 'string value'
   TIPO = 'inteiro'
-
-  # Additional Tokens (not in documentation)
   ALGORITMO = 'algoritmo'
   VAR = 'var'
   COMMA = ','
@@ -55,3 +53,7 @@ class TokenEnum(Enum):
   END_OF_FILE = '__EOF__'
   CONTINUE = 'continue'
   INTERROMPA = 'interrompa'
+  CLASSE = 'classe'
+  METODO = 'metodo'
+  NOVO = 'novo'
+  FIMCLASSE = 'fim_classe'

@@ -33,6 +33,7 @@ class CodeGenerator:
         # Cabeçalho com Wrappers do meuPiá
         self.add_line("# -*- coding: utf-8 -*-")
         self.add_line("import sys")
+        self.add_line("from collections import deque")
         self.imports = []
 
         # Pular algoritmo e nome se existirem
@@ -72,11 +73,13 @@ class CodeGenerator:
             
         self.add_line("")
         
-        while self.check_token(TokenEnum.VAR) or self.check_token(TokenEnum.FUNCAO):
+        while self.check_token(TokenEnum.VAR) or self.check_token(TokenEnum.FUNCAO) or self.check_token(TokenEnum.CLASSE):
             if self.check_token(TokenEnum.VAR):
                 self.gen_variables()
             elif self.check_token(TokenEnum.FUNCAO):
                 self.gen_function_definition()
+            elif self.check_token(TokenEnum.CLASSE):
+                self.gen_class_definition()
 
         if self.check_token(TokenEnum.INICIO):
             self.advance() # INICIO
@@ -176,6 +179,12 @@ class CodeGenerator:
             if metodo == "adicionar": metodo = "append"
             elif metodo == "pegar": metodo = "get"
             elif metodo == "atualizar": metodo = "update"
+            elif metodo == "adicionarInicio": metodo = "appendleft"
+            elif metodo == "adicionarFim": metodo = "append"
+            elif metodo == "removerInicio": metodo = "popleft"
+            elif metodo == "removerFim": metodo = "pop"
+            elif metodo == "expandir": metodo = "extend"
+            elif metodo == "limpar": metodo = "clear"
             
             lexeme += metodo
 
@@ -325,6 +334,13 @@ class CodeGenerator:
                 elif l == "adicionar": l = "append"
                 elif l == "pegar": l = "get"
                 elif l == "atualizar": l = "update"
+                elif l == "filaDupla": l = "deque"
+                elif l == "adicionarInicio": l = "appendleft"
+                elif l == "adicionarFim": l = "append"
+                elif l == "removerInicio": l = "popleft"
+                elif l == "removerFim": l = "pop"
+                elif l == "expandir": l = "extend"
+                elif l == "limpar": l = "clear"
             elif t == TokenEnum.LOGIGUAL.name: l = "=="
             elif t == TokenEnum.LOGDIFF.name: l = "!="
             elif t == TokenEnum.LOGMENOR.name: l = "<"
@@ -342,6 +358,7 @@ class CodeGenerator:
             elif t == TokenEnum.CHAVEF.name: l = "}"
             elif t == TokenEnum.COLON.name: l = ": "
             elif t == TokenEnum.ATR.name: break 
+            elif t == TokenEnum.NOVO.name: l = "" 
             
             # Valid tokens
             valid_expr_tokens = [
@@ -352,7 +369,8 @@ class CodeGenerator:
                 TokenEnum.LOGIGUAL.name, TokenEnum.LOGDIFF.name, TokenEnum.LOGMENOR.name, TokenEnum.LOGMAIOR.name,
                 TokenEnum.LOGMENORIGUAL.name, TokenEnum.LOGMAIORIGUAL.name,
                 TokenEnum.E.name, TokenEnum.OU.name, TokenEnum.NAO.name,
-                TokenEnum.PONTO.name, TokenEnum.CHAVEA.name, TokenEnum.CHAVEF.name, TokenEnum.COLON.name
+                TokenEnum.PONTO.name, TokenEnum.CHAVEA.name, TokenEnum.CHAVEF.name, TokenEnum.COLON.name,
+                TokenEnum.NOVO.name
             ]
             
             # If strictly not in valid tokens, break (safety)
@@ -360,8 +378,8 @@ class CodeGenerator:
                 break
 
             # Adjacency check for implicit break (e.g. "20 ia_treinar")
-            operands_end = [TokenEnum.ID.name, TokenEnum.NUMINT.name, TokenEnum.STRING.name, TokenEnum.PARFE.name, TokenEnum.COLCHETEF.name, TokenEnum.CHAVEF.name] # Adicionado CHAVEF aqui por segurança
-            operands_start = [TokenEnum.ID.name, TokenEnum.NUMINT.name, TokenEnum.STRING.name, TokenEnum.PARAB.name, TokenEnum.NAO.name, TokenEnum.COLCHETEA.name, TokenEnum.CHAVEA.name] # Adicionado CHAVEA aqui
+            operands_end = [TokenEnum.ID.name, TokenEnum.NUMINT.name, TokenEnum.STRING.name, TokenEnum.PARFE.name, TokenEnum.COLCHETEF.name, TokenEnum.CHAVEF.name] 
+            operands_start = [TokenEnum.ID.name, TokenEnum.NUMINT.name, TokenEnum.STRING.name, TokenEnum.PARAB.name, TokenEnum.NAO.name, TokenEnum.COLCHETEA.name, TokenEnum.CHAVEA.name, TokenEnum.NOVO.name]
             
             if len(expr_parts) > 0:
                 pass
@@ -415,3 +433,61 @@ class CodeGenerator:
         self.advance() # RETORNE
         expr = self.gen_expression()
         self.add_line(f"return {expr}")
+
+    def gen_class_definition(self):
+        self.advance() # CLASSE
+        class_name = self.current_lexeme()
+        self.advance() # ID
+        
+        self.add_line(f"class {class_name}:")
+        self.indent_level += 1
+        
+        has_methods = False
+        while self.check_token(TokenEnum.METODO):
+            has_methods = True
+            self.gen_method_definition()
+            
+        if not has_methods:
+            self.add_line("pass")
+            
+        self.indent_level -= 1
+        self.advance() # FIMCLASSE
+        self.add_line("")
+
+    def gen_method_definition(self):
+        self.advance() # METODO
+        func_name = self.current_lexeme()
+        self.advance() # ID
+        
+        self.advance() # (
+        
+        # MÁGICA PEDAGÓGICA: Injeta o 'self' silenciosamente no Python
+        params = ["self"]
+        if self.check_token(TokenEnum.ID):
+            params.append(self.current_lexeme())
+            self.advance() # ID
+            while self.check_token(TokenEnum.COMMA):
+                self.advance() # ,
+                params.append(self.current_lexeme())
+                self.advance() # ID
+                
+        self.advance() # )
+        
+        # Mapeia 'construtor' para o padrão Python
+        if func_name == "construtor":
+            func_name = "__init__"
+            
+        self.add_line(f"def {func_name}({', '.join(params)}):")
+        self.indent_level += 1 
+        
+        has_content = False
+        while not self.check_token(TokenEnum.FIMFUNCAO):
+            has_content = True
+            self.gen_statement()
+            
+        if not has_content:
+            self.add_line("pass")
+            
+        self.indent_level -= 1
+        self.advance() # FIMFUNCAO
+        self.add_line("")

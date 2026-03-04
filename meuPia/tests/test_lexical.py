@@ -105,3 +105,18 @@ def test_scan_assignment_equal():
     
     assert tokens[1]['token'] == TokenEnum.ATR.name
     assert tokens[1]['lexeme'] == "="
+
+def test_scan_oop_keywords():
+    line = "classe metodo novo fim_classe"
+    _, tokens = scan_line(line, 1)
+    
+    expected = [
+        TokenEnum.CLASSE.name,
+        TokenEnum.METODO.name,
+        TokenEnum.NOVO.name,
+        TokenEnum.FIMCLASSE.name
+    ]
+    
+    assert len(tokens) == 4
+    for i, token_data in enumerate(tokens):
+        assert token_data['token'] == expected[i]

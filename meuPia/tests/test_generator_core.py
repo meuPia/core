@@ -233,3 +233,55 @@ def test_gen_builtin_methods():
     assert "lista.append(99)" in output
     assert "dict.update({\"chave\": 1})" in output
     assert "print(dict.get(\"chave\"))" in output
+
+def test_gen_oop_class_and_instantiation():
+    code = """algoritmo "OOPSimples"
+    classe Agente
+        metodo construtor(nome)
+            escreva(nome)
+        fim_funcao
+        metodo explorar(alvo)
+            escreva(alvo)
+        fim_funcao
+    fim_classe
+    var
+        meu_agente: string
+    inicio
+        meu_agente = novo Agente("R2-D2")
+        meu_agente.explorar("Marte")
+    fim_algoritmo"""
+    
+    output = compile_snippet(code)
+    
+    assert "class Agente:" in output
+    assert "def __init__(self, nome):" in output 
+    assert "def explorar(self, alvo):" in output 
+    
+    assert "meu_agente = Agente(\"R2-D2\")" in output
+    assert "meu_agente.explorar(\"Marte\")" in output
+
+def test_gen_deque_methods():
+    code = """algoritmo "DequeAcademico"
+    var
+        fila: string
+    inicio
+        fila = filaDupla()
+        fila.adicionarInicio(10)
+        fila.adicionarFim(20)
+        fila.removerInicio()
+        fila.removerFim()
+        fila.expandir([30, 40])
+        fila.limpar()
+    fim_algoritmo"""
+    
+    output = compile_snippet(code)
+    
+    assert "from collections import deque" in output
+    assert "fila = deque()" in output
+    
+    assert "fila.appendleft(10)" in output
+    assert "fila.append(20)" in output
+    assert "fila.popleft()" in output
+    assert "fila.pop()" in output
+    assert "fila.extend([30, 40])" in output
+    assert "fila.clear()" in output

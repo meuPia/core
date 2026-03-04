@@ -60,11 +60,13 @@ class Parser:
     if self.check_token(TokenEnum.VAR):
       self.grammar_variable_block()
 
-    while self.check_token_any([TokenEnum.FUNCAO, TokenEnum.VAR]):
+    while self.check_token_any([TokenEnum.FUNCAO, TokenEnum.VAR, TokenEnum.CLASSE]):
       if self.check_token(TokenEnum.FUNCAO):
           self.grammar_function_declaration()
       elif self.check_token(TokenEnum.VAR):
           self.grammar_variable_block()
+      elif self.check_token(TokenEnum.CLASSE):
+          self.grammar_class_declaration()
 
     self.expect_token(TokenEnum.INICIO)
 
@@ -233,7 +235,7 @@ class Parser:
   def grammar_arithmetic_term(self):
     if self.check_token(TokenEnum.ID):
       self.expect_token(TokenEnum.ID)
-      
+
       # Aceita métodos/propriedades encadeados em expressões (ex: escreva(texto.upper()))
       while self.check_token(TokenEnum.PONTO):
           self.expect_token(TokenEnum.PONTO)
@@ -254,6 +256,19 @@ class Parser:
               self.expect_token(TokenEnum.COLCHETEA)
               self.grammar_arithmetic_expression()
               self.expect_token(TokenEnum.COLCHETEF)
+
+    elif self.check_token(TokenEnum.NOVO):
+      self.expect_token(TokenEnum.NOVO)
+      self.expect_token(TokenEnum.ID)
+      self.expect_token(TokenEnum.PARAB) # (
+      
+      if not self.check_token(TokenEnum.PARFE):
+          self.grammar_arithmetic_expression()
+          while self.check_token(TokenEnum.COMMA):
+              self.expect_token(TokenEnum.COMMA)
+              self.grammar_arithmetic_expression()
+      
+      self.expect_token(TokenEnum.PARFE) # )
 
     elif self.check_token(TokenEnum.NUMINT):
       self.expect_token(TokenEnum.NUMINT)
@@ -353,3 +368,29 @@ class Parser:
   def grammar_command_retorne(self):
     self.expect_token(TokenEnum.RETORNE)
     self.grammar_arithmetic_expression() # O que ele vai retornar
+  
+  def grammar_class_declaration(self):
+    self.expect_token(TokenEnum.CLASSE)
+    self.expect_token(TokenEnum.ID) # Nome da classe
+    while self.check_token(TokenEnum.METODO):
+      self.grammar_method_declaration()
+
+    self.expect_token(TokenEnum.FIMCLASSE)
+
+  def grammar_method_declaration(self):
+    self.expect_token(TokenEnum.METODO)
+    self.expect_token(TokenEnum.ID)     # Nome do método
+    self.expect_token(TokenEnum.PARAB)  # (
+    
+    if self.check_token(TokenEnum.ID):
+      self.expect_token(TokenEnum.ID)
+      while self.check_token(TokenEnum.COMMA):
+        self.expect_token(TokenEnum.COMMA)
+        self.expect_token(TokenEnum.ID)
+        
+    self.expect_token(TokenEnum.PARFE)  # )
+    
+    while not self.check_token(TokenEnum.FIMFUNCAO):
+      self.statement()
+      
+    self.expect_token(TokenEnum.FIMFUNCAO)

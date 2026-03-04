@@ -156,7 +156,6 @@ def match_token_keywords(line: str, startIndex: int, lineNumber: int) -> Optiona
     'inteiro': TokenEnum.TIPO,
     'string': TokenEnum.TIPO,
     'cadeia': TokenEnum.TIPO,
-    # Additional Tokens (not in documentation)
     'algoritmo': TokenEnum.ALGORITMO,
     'var': TokenEnum.VAR,
     'inicio': TokenEnum.INICIO,
@@ -167,6 +166,10 @@ def match_token_keywords(line: str, startIndex: int, lineNumber: int) -> Optiona
     'fim_funcao': TokenEnum.FIMFUNCAO,
     'continue': TokenEnum.CONTINUE,
     'interrompa': TokenEnum.INTERROMPA,
+    'classe': TokenEnum.CLASSE,
+    'metodo': TokenEnum.METODO,
+    'novo': TokenEnum.NOVO,
+    'fim_classe': TokenEnum.FIMCLASSE,
   }
 
   for keyword, token in keywords.items():
