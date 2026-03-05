@@ -318,3 +318,14 @@ def test_gen_atribuicao_seta():
     
     # O Python não usa <-, então o compilador tem que gerar =
     assert "x = 42" in output
+
+def test_gen_fila_prioridade():
+    code = """algoritmo "TesteHeap"
+    var fila: inteiro
+    inicio
+        fila <- filaPrioridade()
+        fila.inserir(10)
+        fila.inserir(5)
+        fila.inserir(20)
+        escreva(fila.remover()) // Deve imprimir 5
+    fim_algoritmo"""

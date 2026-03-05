@@ -34,6 +34,19 @@ class CodeGenerator:
         self.add_line("# -*- coding: utf-8 -*-")
         self.add_line("import sys")
         self.add_line("from collections import deque")
+        self.add_line("class FilaPrioridade:")
+        self.add_line("    def __init__(self):")
+        self.add_line("        self.heap = []")
+        self.add_line("    def inserir(self, item):")
+        self.add_line("        heapq.heappush(self.heap, item)")
+        self.add_line("    def remover(self):")
+        self.add_line("        return heapq.heappop(self.heap)")
+        self.add_line("    def espiar(self):")
+        self.add_line("        return self.heap[0] if self.heap else None")
+        self.add_line("    def tamanho(self):")
+        self.add_line("        return len(self.heap)")
+        self.add_line("")
+
         self.imports = []
 
         # Pular algoritmo e nome se existirem
@@ -344,6 +357,7 @@ class CodeGenerator:
                 elif l == "pegar": l = "get"
                 elif l == "atualizar": l = "update"
                 elif l == "filaDupla": l = "deque"
+                elif l == "filaPrioridade": l = "FilaPrioridade"
                 elif l == "adicionarInicio": l = "appendleft"
                 elif l == "adicionarFim": l = "append"
                 elif l == "removerInicio": l = "popleft"
