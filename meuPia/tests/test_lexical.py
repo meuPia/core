@@ -120,3 +120,12 @@ def test_scan_oop_keywords():
     assert len(tokens) == 4
     for i, token_data in enumerate(tokens):
         assert token_data['token'] == expected[i]
+
+def test_scan_atribuicao_seta():
+    line = "x <- 10"
+    _, tokens = scan_line(line, 1)
+    
+    # x (ID), <- (ATR), 10 (NUMINT)
+    assert len(tokens) == 3
+    assert tokens[1]['token'] == TokenEnum.ATR.name
+    assert tokens[1]['lexeme'] == "<-"

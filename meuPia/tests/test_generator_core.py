@@ -306,3 +306,15 @@ def test_gen_local_file_import():
     
     assert "from meus_calculos import *" in output
     assert "O ficheiro local 'meus_calculos' não foi encontrado" in output
+
+def test_gen_atribuicao_seta():
+    code = """algoritmo "AtribuicaoSeta"
+    var x: inteiro
+    inicio
+        x <- 42
+    fim_algoritmo"""
+    
+    output = compile_snippet(code)
+    
+    # O Python não usa <-, então o compilador tem que gerar =
+    assert "x = 42" in output
