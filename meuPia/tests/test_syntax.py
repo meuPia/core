@@ -194,3 +194,15 @@ def test_syntax_oop_class():
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)
     parser.parse()
+
+def test_syntax_unary_minus():
+    code = [
+        'algoritmo "Negativo"',
+        'inicio',
+        '   escreva(-1)',
+        '   escreva(5 + -3)',
+        'fim_algoritmo'
+    ]
+    lexemes = mock_lexemes(code)
+    parser = Parser(lexemes)
+    parser.parse() 

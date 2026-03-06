@@ -233,6 +233,9 @@ class Parser:
       self.grammar_arithmetic_term()
 
   def grammar_arithmetic_term(self):
+    if self.check_token(TokenEnum.OPMENOS):
+      self.expect_token(TokenEnum.OPMENOS)
+
     if self.check_token(TokenEnum.ID):
       self.expect_token(TokenEnum.ID)
 

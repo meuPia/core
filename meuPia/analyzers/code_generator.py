@@ -65,7 +65,8 @@ class CodeGenerator:
         PLUGIN_IMPORT_MAP = {
             "ia": "from meupia_ia.plugin_ia import *",
             "maker": "from meupia_maker.plugin_iot import *",
-            "espacial": "from meupia_espacial.plugin_ksp import *"
+            "espacial": "from meupia_espacial.plugin_ksp import *",
+            "testes": "from meupia_testes.plugin_testes import *"
         }
 
         for plugin in self.imports:
@@ -89,7 +90,7 @@ class CodeGenerator:
                 self.indent_level -= 1
                 self.add_line(f"except ImportError:")
                 self.indent_level += 1
-                self.add_line(f"print(\"Erro: O ficheiro local '{plugin}' não foi encontrado.\")")
+                self.add_line(f"print(\"Erro: O arquivo local '{plugin}' não foi encontrado.\")")
                 self.add_line(f"sys.exit(1)")
                 self.indent_level -= 1
 
