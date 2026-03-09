@@ -8,6 +8,7 @@ PLUGIN_REGISTRY = {
     "espacial": "git+https://github.com/meuPia/espacial.git",
     "ia": "git+https://github.com/meuPia/ia.git",
     "testes": "git+https://github.com/meuPia/testes.git",
+    "grid": "git+https://github.com/meuPia/grid.git",
 }
 
 def install_plugin(plugin_name):

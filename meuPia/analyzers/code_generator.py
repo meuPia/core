@@ -66,7 +66,8 @@ class CodeGenerator:
             "ia": "from meupia_ia.plugin_ia import *",
             "maker": "from meupia_maker.plugin_iot import *",
             "espacial": "from meupia_espacial.plugin_ksp import *",
-            "testes": "from meupia_testes.plugin_testes import *"
+            "testes": "from meupia_testes.plugin_testes import *",
+            "grid": "from meupia_grid.plugin_grid import *"
         }
 
         for plugin in self.imports:
