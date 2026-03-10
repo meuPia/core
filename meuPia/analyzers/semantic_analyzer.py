@@ -103,6 +103,8 @@ class SemanticAnalyzer:
 
         if is_function_call:
             pass # Allow all function calls, runtime will handle errors
+        elif lexeme in ['verdadeiro', 'falso']:
+            pass
         elif not self.is_variable_declared(lexeme) and lexeme not in local_vars:
           code_index = self.current_code_index()
           raise SemanticError(f'Undeclared variable "{lexeme}" used at line {code_index}.')

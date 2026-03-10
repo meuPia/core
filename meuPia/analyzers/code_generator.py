@@ -33,6 +33,7 @@ class CodeGenerator:
         # Cabeçalho com Wrappers do meuPiá
         self.add_line("# -*- coding: utf-8 -*-")
         self.add_line("import sys")
+        self.add_line("import math")
         self.add_line("from collections import deque")
         self.add_line("class FilaPrioridade:")
         self.add_line("    def __init__(self):")
@@ -137,7 +138,12 @@ class CodeGenerator:
             tipo = self.current_lexeme()
             self.advance() # TIPO
             
-            val_inicial = "0" if tipo == "inteiro" else "''"
+            if tipo == "inteiro":
+                val_inicial = "0"
+            elif tipo == "real" or tipo == "float":
+                val_inicial = "0.0"
+            else:
+                val_inicial = "''"
             for var_name in ids:
                 self.var_types[var_name] = tipo
                 self.add_line(f"{var_name} = {val_inicial}")
@@ -252,10 +258,12 @@ class CodeGenerator:
         var_name = self.current_lexeme()
         self.advance() # ID
         
-        is_int = self.var_types.get(var_name) == 'inteiro'
+        tipo_var = self.var_types.get(var_name)
         
-        if is_int:
+        if tipo_var == 'inteiro':
             self.add_line(f"{var_name} = int(input())") 
+        elif tipo_var in ['real', 'float']:
+            self.add_line(f"{var_name} = float(input())") 
         else:
             self.add_line(f"{var_name} = input()")
 
@@ -355,6 +363,8 @@ class CodeGenerator:
             # Lexeme mapping
             if t == TokenEnum.ID.name:
                 if l == "tamanho": l = "len"
+                elif l == "verdadeiro": l = "True"
+                elif l == "falso": l = "False"
                 elif l == "adicionar": l = "append"
                 elif l == "pegar": l = "get"
                 elif l == "atualizar": l = "update"
@@ -366,6 +376,15 @@ class CodeGenerator:
                 elif l == "removerFim": l = "pop"
                 elif l == "expandir": l = "extend"
                 elif l == "limpar": l = "clear"
+                elif l == "raiz": l = "math.sqrt"
+                elif l == "potencia": l = "math.pow"
+                elif l == "seno": l = "math.sin"
+                elif l == "cosseno": l = "math.cos"
+                elif l == "tangente": l = "math.tan"
+                elif l == "teto": l = "math.ceil"
+                elif l == "piso": l = "math.floor"
+                elif l == "pi": l = "math.pi"
+                elif l == "absoluto": l = "abs"
             elif t == TokenEnum.LOGIGUAL.name: l = "=="
             elif t == TokenEnum.LOGDIFF.name: l = "!="
             elif t == TokenEnum.LOGMENOR.name: l = "<"

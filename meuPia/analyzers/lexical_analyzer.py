@@ -156,6 +156,8 @@ def match_token_keywords(line: str, startIndex: int, lineNumber: int) -> Optiona
     'inteiro': TokenEnum.TIPO,
     'string': TokenEnum.TIPO,
     'cadeia': TokenEnum.TIPO,
+    'real': TokenEnum.TIPO,
+    'float': TokenEnum.TIPO,
     'algoritmo': TokenEnum.ALGORITMO,
     'var': TokenEnum.VAR,
     'inicio': TokenEnum.INICIO,
@@ -221,8 +223,7 @@ def match_token_mathoperators(line: str, startIndex: int, lineNumber: int) -> Op
     return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.OPMULTI.name)
   if char == '/':
     return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.OPDIVI.name)
-
-  return None  # Not a match
+  return None 
 
 def match_token_parentheses(line: str, startIndex: int, lineNumber: int) -> Optional[TokenMatch]:
   char = line[startIndex]
@@ -231,25 +232,34 @@ def match_token_parentheses(line: str, startIndex: int, lineNumber: int) -> Opti
     return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.PARAB.name)
   if char == ')':
     return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.PARFE.name)
-
-  return None  # Not a match
+  return None
 
 def match_token_constnumbers(line: str, startIndex: int, lineNumber: int) -> Optional[TokenMatch]:
   if not line[startIndex].isdigit():
-    return None  # Not starting with a digit
+    return None 
 
   i = startIndex
-  while i < len(line) and line[i].isdigit():
-    i += 1
+  has_dot = False
+  
+  while i < len(line):
+    if line[i].isdigit():
+      i += 1
+    elif line[i] == '.' and not has_dot:
+      if i + 1 < len(line) and line[i+1].isdigit():
+        has_dot = True
+        i += 1
+      else:
+        break 
+    else:
+      break
 
-  # Check token boundaries
   prev_valid = startIndex == 0 or not line[startIndex - 1].isalnum()
-  next_valid = i >= len(line) or not line[i].isalnum()
+  next_valid = i >= len(line) or (not line[i].isalnum() and line[i] != '.')
 
   if prev_valid and next_valid:
     return TokenMatch(start=startIndex, end=i, replacement=TokenEnum.NUMINT.name)
 
-  return None  # Not a match
+  return None
 
 def match_token_brackets(line: str, startIndex: int, lineNumber: int) -> Optional[TokenMatch]:
   char = line[startIndex]
