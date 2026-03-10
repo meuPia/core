@@ -142,6 +142,8 @@ class CodeGenerator:
                 val_inicial = "0"
             elif tipo == "real" or tipo == "float":
                 val_inicial = "0.0"
+            elif tipo == "dicionario": 
+                val_inicial = "{}"
             else:
                 val_inicial = "''"
             for var_name in ids:
