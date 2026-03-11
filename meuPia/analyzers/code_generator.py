@@ -54,7 +54,7 @@ class CodeGenerator:
         self.add_line("        return heapq.heappop(self.heap)")
         self.add_line("    def espiar(self):")
         self.add_line("        return self.heap[0] if self.heap else None")
-        self.add_line("    def tamanho(self):")
+        self.add_line("    def len(self):")
         self.add_line("        return len(self.heap)")
         self.add_line("")
 
