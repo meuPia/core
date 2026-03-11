@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="meupia-core",
-    version="1.1.13",
+    version="1.1.14",
     author="Henry Hamon",
     author_email="henryhamon@gmail.com",
     description="Compilador modular de Portugol para Python focado em educação.",

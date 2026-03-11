@@ -34,6 +34,15 @@ class CodeGenerator:
         self.add_line("# -*- coding: utf-8 -*-")
         self.add_line("import sys")
         self.add_line("import math")
+        self.add_line("class _S(str):")
+        self.add_line("    def __add__(self, other):")
+        self.add_line("        if other is True: other = 'verdadeiro'")
+        self.add_line("        elif other is False: other = 'falso'")
+        self.add_line("        return _S(str(self) + str(other))")
+        self.add_line("    def __radd__(self, other):")
+        self.add_line("        if other is True: other = 'verdadeiro'")
+        self.add_line("        elif other is False: other = 'falso'")
+        self.add_line("        return _S(str(other) + str(self))")
         self.add_line("from collections import deque")
         self.add_line("class FilaPrioridade:")
         self.add_line("    def __init__(self):")
@@ -145,7 +154,7 @@ class CodeGenerator:
             elif tipo == "dicionario": 
                 val_inicial = "{}"
             else:
-                val_inicial = "''"
+                val_inicial = "_S('')"
             for var_name in ids:
                 self.var_types[var_name] = tipo
                 self.add_line(f"{var_name} = {val_inicial}")
@@ -267,7 +276,7 @@ class CodeGenerator:
         elif tipo_var in ['real', 'float']:
             self.add_line(f"{var_name} = float(input())") 
         else:
-            self.add_line(f"{var_name} = input()")
+            self.add_line(f"{var_name} = _S(input())")
 
         self.advance() # )
 
@@ -405,6 +414,7 @@ class CodeGenerator:
             elif t == TokenEnum.COLON.name: l = ": "
             elif t == TokenEnum.ATR.name: break 
             elif t == TokenEnum.NOVO.name: l = "" 
+            elif t == TokenEnum.STRING.name: l = f"_S({l})"
             
             # Valid tokens
             valid_expr_tokens = [
