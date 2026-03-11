@@ -126,8 +126,8 @@ def match_token_string(line: str, startIndex: int, lineNumber: int) -> Optional[
 
 def match_token_keywords(line: str, startIndex: int, lineNumber: int) -> Optional[TokenMatch]:
   def is_valid_boundary(start: int, end: int) -> bool:
-    prev_valid = start == 0 or not line[start - 1].isalnum()
-    next_valid = end >= len(line) or not line[end].isalnum()
+    prev_valid = start == 0 or (not line[start - 1].isalnum() and line[start - 1] != '_')
+    next_valid = end >= len(line) or (not line[end].isalnum() and line[end] != '_')
     return prev_valid and next_valid
 
   keywords = {
@@ -297,8 +297,8 @@ def match_token_identifier(line: str, startIndex: int, lineNumber: int) -> Optio
   while i < len(line) and (line[i].isalnum() or line[i] == '_'):
     i += 1
 
-  prev_valid = startIndex == 0 or not line[startIndex - 1].isalnum()
-  next_valid = i >= len(line) or not line[i].isalnum()
+  prev_valid = startIndex == 0 or (not line[startIndex - 1].isalnum() and line[startIndex - 1] != '_')
+  next_valid = i >= len(line) or (not line[i].isalnum() and line[i] != '_')
   if prev_valid and next_valid:
     return TokenMatch(start=startIndex, end=i, replacement=TokenEnum.ID.name)
 
