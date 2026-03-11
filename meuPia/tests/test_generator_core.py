@@ -330,3 +330,72 @@ def test_gen_oop_class_and_instantiation():
     assert "def explorar(self, alvo):" in output
     assert 'meu_agente = Agente(_S("R2-D2"))' in output
     assert 'meu_agente.explorar(_S("Marte"))' in output
+
+def test_gen_global_scope_in_main():
+    code = """algoritmo "ScopeMain"
+    var x: inteiro
+    inicio
+        x = 10
+    fim_algoritmo"""
+    
+    output = compile_snippet(code)
+    
+    # A função main() precisa declarar 'x' como global
+    assert "global x" in output
+
+def test_gen_global_scope_in_functions():
+    code = """algoritmo "ScopeFunc"
+    var y: inteiro
+    funcao alterar_y()
+        y = 20
+    fim_funcao
+    inicio
+        alterar_y()
+    fim_algoritmo"""
+    
+    output = compile_snippet(code)
+    
+    # A declaração global deve existir e estar dentro da função
+    func_def_idx = output.find("def alterar_y():")
+    global_y_idx = output.find("global y", func_def_idx)
+    
+    assert global_y_idx > func_def_idx
+
+def test_gen_global_scope_excluding_params():
+    code = """algoritmo "ScopeShadow"
+    var z, w: inteiro
+    funcao somar(z)
+        retorne z + w
+    fim_funcao
+    inicio
+        escreva(somar(5))
+    fim_algoritmo"""
+    
+    output = compile_snippet(code)
+    
+    # 'w' é global, mas 'z' é parâmetro local.
+    # O compilador não pode injetar 'z' no global da função somar!
+    func_def_idx = output.find("def somar(z):")
+    global_decl_idx = output.find("global", func_def_idx)
+    global_line = output[global_decl_idx:output.find("\n", global_decl_idx)]
+    
+    assert "w" in global_line
+    assert "z" not in global_line
+
+def test_gen_global_scope_in_methods():
+    code = """algoritmo "ScopeMethod"
+    var contador: inteiro
+    classe Relogio
+        metodo tique()
+            contador = contador + 1
+        fim_funcao
+    fim_classe
+    inicio
+    fim_algoritmo"""
+    
+    output = compile_snippet(code)
+    
+    func_def_idx = output.find("def tique(self):")
+    global_idx = output.find("global contador", func_def_idx)
+    
+    assert global_idx > func_def_idx

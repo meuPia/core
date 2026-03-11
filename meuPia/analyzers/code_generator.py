@@ -121,6 +121,8 @@ class CodeGenerator:
         
         self.add_line("def main():")
         self.indent_level += 1
+        if self.var_types:
+            self.add_line(f"global {', '.join(self.var_types.keys())}")
         
         while not self.check_token(TokenEnum.FIMALGORITMO) and not self.check_token(TokenEnum.END_OF_FILE):
             self.gen_statement()
@@ -482,6 +484,10 @@ class CodeGenerator:
         
         self.add_line(f"def {func_name}({', '.join(params)}):")
         self.indent_level += 1 
+        if self.var_types:
+            global_vars = [v for v in self.var_types.keys() if v not in params]
+            if global_vars:
+                self.add_line(f"global {', '.join(global_vars)}")
         
         while not self.check_token(TokenEnum.FIMFUNCAO):
             self.gen_statement()
@@ -540,6 +546,10 @@ class CodeGenerator:
             
         self.add_line(f"def {func_name}({', '.join(params)}):")
         self.indent_level += 1 
+        if self.var_types:
+            global_vars = [v for v in self.var_types.keys() if v not in params]
+            if global_vars:
+                self.add_line(f"global {', '.join(global_vars)}")
         
         has_content = False
         while not self.check_token(TokenEnum.FIMFUNCAO):
