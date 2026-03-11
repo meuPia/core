@@ -82,18 +82,6 @@ def test_gen_function_call_ia():
     output = compile_snippet(code)
     assert "ia_treinar(dados)" in output
 
-def test_gen_object_methods():
-    code = """algoritmo "Obj"
-    var lista: string
-    inicio
-    lista <- "a,b,c"
-    escreva(lista.split(","))
-    lista.append("d")
-    fim_algoritmo"""
-    output = compile_snippet(code)
-    assert 'print(lista.split(","))' in output
-    assert 'lista.append("d")' in output
-
 def test_gen_enquanto():
     code = """algoritmo "While"
     var x: inteiro
@@ -104,24 +92,6 @@ def test_gen_enquanto():
     fim_algoritmo"""
     output = compile_snippet(code)
     assert "while x<10:" in output
-
-def test_gen_leia_typing():
-    code = """algoritmo "LeiaType"
-    var n: inteiro
-    s: string
-    inicio
-    leia(n)
-    leia(s)
-    fim_algoritmo"""
-    
-    # We need to ensure var types are registered in the generator for this test
-    # compile_snippet creates a new Generator each time, so it's fresh.
-    output = compile_snippet(code)
-    
-    # Inteiro deve ser int(input())
-    assert "n = int(input())" in output
-    # String deve ser input()
-    assert "s = input()" in output
 
 def test_gen_boolean_logic():
     code = """algoritmo "Bool"
@@ -169,18 +139,6 @@ def test_gen_plugin_import_ia():
     assert "from meupia_ia.plugin_ia import *" in output
     assert "except ImportError:" in output
 
-def test_gen_dictionary():
-    code = """algoritmo "DictGen"
-    var pessoa: inteiro
-    inicio
-    pessoa <- {"nome": "Henry", "idade": 30}
-    escreva(pessoa["nome"])
-    fim_algoritmo"""
-    
-    output = compile_snippet(code)
-    
-    assert 'pessoa = {"nome": "Henry", "idade": 30}' in output
-
 def test_gen_function_definition():
     code = """algoritmo "FuncGen"
     funcao somar(a, b)
@@ -215,50 +173,6 @@ def test_gen_builtin_tamanho():
     
     output = compile_snippet(code)
     assert "print(len(lista))" in output
-
-def test_gen_builtin_methods():
-    code = """algoritmo "MetodosNativos"
-    var lista, dict: inteiro
-    inicio
-    lista = []
-    dict = {}
-    
-    lista.adicionar(99)
-    dict.atualizar({"chave": 1})
-    escreva(dict.pegar("chave"))
-    fim_algoritmo"""
-    
-    output = compile_snippet(code)
-    
-    assert "lista.append(99)" in output
-    assert "dict.update({\"chave\": 1})" in output
-    assert "print(dict.get(\"chave\"))" in output
-
-def test_gen_oop_class_and_instantiation():
-    code = """algoritmo "OOPSimples"
-    classe Agente
-        metodo construtor(nome)
-            escreva(nome)
-        fim_funcao
-        metodo explorar(alvo)
-            escreva(alvo)
-        fim_funcao
-    fim_classe
-    var
-        meu_agente: string
-    inicio
-        meu_agente = novo Agente("R2-D2")
-        meu_agente.explorar("Marte")
-    fim_algoritmo"""
-    
-    output = compile_snippet(code)
-    
-    assert "class Agente:" in output
-    assert "def __init__(self, nome):" in output 
-    assert "def explorar(self, alvo):" in output 
-    
-    assert "meu_agente = Agente(\"R2-D2\")" in output
-    assert "meu_agente.explorar(\"Marte\")" in output
 
 def test_gen_deque_methods():
     code = """algoritmo "DequeAcademico"
@@ -316,19 +230,7 @@ def test_gen_atribuicao_seta():
     
     output = compile_snippet(code)
     
-    # O Python não usa <-, então o compilador tem que gerar =
     assert "x = 42" in output
-
-def test_gen_fila_prioridade():
-    code = """algoritmo "TesteHeap"
-    var fila: inteiro
-    inicio
-        fila <- filaPrioridade()
-        fila.inserir(10)
-        fila.inserir(5)
-        fila.inserir(20)
-        escreva(fila.remover()) // Deve imprimir 5
-    fim_algoritmo"""
 
 def test_gen_unary_minus():
     code = """algoritmo "Negativo"
@@ -338,3 +240,93 @@ def test_gen_unary_minus():
     
     output = compile_snippet(code)
     assert "print(-1)" in output
+
+def test_gen_fila_prioridade():
+    code = """algoritmo "TesteHeap"
+    var fila: filaPrioridade
+    inicio
+        fila <- novo filaPrioridade()
+        fila.inserir(10)
+        fila.inserir(5)
+        fila.inserir(20)
+        escreva(fila.remover())
+    fim_algoritmo"""
+    
+    output = compile_snippet(code)
+    
+    assert "fila = FilaPrioridade()" in output
+    assert "fila.inserir(10)" in output
+    assert "print(fila.remover())" in output
+
+def test_gen_object_methods():
+    code = """algoritmo "Obj"
+    var lista: string
+    inicio
+    lista <- "a,b,c"
+    escreva(lista.split(","))
+    lista.append("d")
+    fim_algoritmo"""
+    output = compile_snippet(code)
+    assert 'print(lista.split(_S(",")))' in output
+    assert 'lista.append(_S("d"))' in output
+
+def test_gen_leia_typing():
+    code = """algoritmo "LeiaType"
+    var n: inteiro
+    s: string
+    inicio
+    leia(n)
+    leia(s)
+    fim_algoritmo"""
+    output = compile_snippet(code)
+    assert "n = int(input())" in output
+    assert "s = _S(input())" in output
+
+def test_gen_dictionary():
+    code = """algoritmo "DictGen"
+    var pessoa: inteiro
+    inicio
+    pessoa <- {"nome": "Henry", "idade": 30}
+    escreva(pessoa["nome"])
+    fim_algoritmo"""
+    output = compile_snippet(code)
+    assert 'pessoa = {_S("nome"): _S("Henry"), _S("idade"): 30}' in output
+
+def test_gen_builtin_methods():
+    code = """algoritmo "MetodosNativos"
+    var lista, dict: inteiro
+    inicio
+    lista = []
+    dict = {}
+    
+    lista.adicionar(99)
+    dict.atualizar({"chave": 1})
+    escreva(dict.pegar("chave"))
+    fim_algoritmo"""
+    output = compile_snippet(code)
+    assert "lista.append(99)" in output
+    assert 'dict.update({_S("chave"): 1})' in output
+    assert 'print(dict.get(_S("chave")))' in output
+
+def test_gen_oop_class_and_instantiation():
+    code = """algoritmo "OOPSimples"
+    classe Agente
+        metodo construtor(nome)
+            escreva(nome)
+        fim_funcao
+        metodo explorar(alvo)
+            escreva(alvo)
+        fim_funcao
+    fim_classe
+    var
+        meu_agente: string
+    inicio
+        meu_agente = novo Agente("R2-D2")
+        meu_agente.explorar("Marte")
+    fim_algoritmo"""
+    output = compile_snippet(code)
+    assert "class Agente:" in output
+    assert "def __init__(self, nome):" in output
+    assert "def explorar(self, alvo):" in output
+    assert 'meu_agente = Agente(_S("R2-D2"))' in output
+    assert 'meu_agente.explorar(_S("Marte"))' in output

@@ -159,6 +159,7 @@ def match_token_keywords(line: str, startIndex: int, lineNumber: int) -> Optiona
     'real': TokenEnum.TIPO,
     'float': TokenEnum.TIPO,
     'dicionario': TokenEnum.TIPO,
+    'filaprioridade': TokenEnum.TIPO,
     'algoritmo': TokenEnum.ALGORITMO,
     'var': TokenEnum.VAR,
     'inicio': TokenEnum.INICIO,

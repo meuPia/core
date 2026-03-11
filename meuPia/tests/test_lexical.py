@@ -129,3 +129,19 @@ def test_scan_atribuicao_seta():
     assert len(tokens) == 3
     assert tokens[1]['token'] == TokenEnum.ATR.name
     assert tokens[1]['lexeme'] == "<-"
+
+def test_scan_keyword_as_substring_with_underscore():
+    line = "novo_g ate_logo se_verdade filaPrioridade"
+    _, tokens = scan_line(line, 1)
+    
+    assert tokens[0]['lexeme'] == 'novo_g'
+    assert tokens[0]['token'] == TokenEnum.ID.name
+    
+    assert tokens[1]['lexeme'] == 'ate_logo'
+    assert tokens[1]['token'] == TokenEnum.ID.name
+    
+    assert tokens[2]['lexeme'] == 'se_verdade'
+    assert tokens[2]['token'] == TokenEnum.ID.name
+    
+    assert tokens[3]['lexeme'] == 'filaPrioridade'
+    assert tokens[3]['token'] == TokenEnum.TIPO.name

@@ -146,19 +146,6 @@ def test_syntax_function_declaration():
     parser = Parser(lexemes)
     parser.parse()
 
-def test_syntax_direct_indexing_assignment():
-    code = [
-        'algoritmo "Index"',
-        'var lista: inteiro',
-        'inicio',
-        '   lista = 10',
-        '   dicionario["nome"] = "Henry"',
-        'fim_algoritmo'
-    ]
-    lexemes = mock_lexemes(code)
-    parser = Parser(lexemes)
-    parser.parse() # Deve falhar aqui
-
 def test_syntax_deque_methods():
     code = [
         'algoritmo "FilaDupla"',
@@ -206,3 +193,28 @@ def test_syntax_unary_minus():
     lexemes = mock_lexemes(code)
     parser = Parser(lexemes)
     parser.parse() 
+
+def test_syntax_instantiate_native_type():
+    code = [
+        'algoritmo "NativeType"',
+        'var fila: filaPrioridade',
+        'inicio',
+        '   fila = novo filaPrioridade()',
+        'fim_algoritmo'
+    ]
+    lexemes = mock_lexemes(code)
+    parser = Parser(lexemes)
+    parser.parse() 
+
+def test_syntax_direct_indexing_assignment():
+    code = [
+        'algoritmo "Index"',
+        'var lista: inteiro',
+        'inicio',
+        '   lista = 10',
+        '   meu_dict["nome"] = "Henry"', # <- Modificado aqui!
+        'fim_algoritmo'
+    ]
+    lexemes = mock_lexemes(code)
+    parser = Parser(lexemes)
+    parser.parse() # Agora sim vai passar com 100% de sucesso

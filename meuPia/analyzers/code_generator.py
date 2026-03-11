@@ -153,6 +153,8 @@ class CodeGenerator:
                 val_inicial = "0.0"
             elif tipo == "dicionario": 
                 val_inicial = "{}"
+            elif tipo.lower() == "filaprioridade": 
+                val_inicial = "FilaPrioridade()"
             else:
                 val_inicial = "_S('')"
             for var_name in ids:
@@ -396,6 +398,8 @@ class CodeGenerator:
                 elif l == "piso": l = "math.floor"
                 elif l == "pi": l = "math.pi"
                 elif l == "absoluto": l = "abs"
+            elif t == TokenEnum.TIPO.name:
+                if l.lower() == "filaprioridade": l = "FilaPrioridade"
             elif t == TokenEnum.LOGIGUAL.name: l = "=="
             elif t == TokenEnum.LOGDIFF.name: l = "!="
             elif t == TokenEnum.LOGMENOR.name: l = "<"
@@ -418,7 +422,7 @@ class CodeGenerator:
             
             # Valid tokens
             valid_expr_tokens = [
-                TokenEnum.ID.name, TokenEnum.NUMINT.name, TokenEnum.STRING.name, 
+                TokenEnum.ID.name, TokenEnum.NUMINT.name, TokenEnum.STRING.name, TokenEnum.TIPO.name,
                 TokenEnum.OPMAIS.name, TokenEnum.OPMENOS.name, TokenEnum.OPMULTI.name, TokenEnum.OPDIVI.name,
                 TokenEnum.PARAB.name, TokenEnum.PARFE.name,
                 TokenEnum.COLCHETEA.name, TokenEnum.COLCHETEF.name, TokenEnum.COMMA.name, 
@@ -435,7 +439,7 @@ class CodeGenerator:
 
             # Adjacency check for implicit break (e.g. "20 ia_treinar")
             operands_end = [TokenEnum.ID.name, TokenEnum.NUMINT.name, TokenEnum.STRING.name, TokenEnum.PARFE.name, TokenEnum.COLCHETEF.name, TokenEnum.CHAVEF.name] 
-            operands_start = [TokenEnum.ID.name, TokenEnum.NUMINT.name, TokenEnum.STRING.name, TokenEnum.PARAB.name, TokenEnum.NAO.name, TokenEnum.COLCHETEA.name, TokenEnum.CHAVEA.name, TokenEnum.NOVO.name]
+            operands_start = [TokenEnum.ID.name, TokenEnum.NUMINT.name, TokenEnum.STRING.name, TokenEnum.TIPO.name, TokenEnum.PARAB.name, TokenEnum.NAO.name, TokenEnum.COLCHETEA.name, TokenEnum.CHAVEA.name, TokenEnum.NOVO.name]
             
             if len(expr_parts) > 0:
                 pass

@@ -81,7 +81,6 @@ class Parser:
       raise SyntacticError(f'Código inesperado após "fimalgoritmo": "{extra_lexeme}" na linha {code_index}')
 
   def statement(self):
-    # A função grammar_id_statement agora cuida de TUDO (atribuição, métodos encadeados, etc)
     if self.check_token(TokenEnum.ID):
       self.grammar_id_statement()
     elif self.check_token(TokenEnum.ESCREVA):
@@ -108,7 +107,6 @@ class Parser:
   def grammar_id_statement(self):
     self.expect_token(TokenEnum.ID)
     
-    # Consome os métodos/propriedades encadeados (ex: pessoa.endereco.rua)
     while self.check_token(TokenEnum.PONTO):
       self.expect_token(TokenEnum.PONTO)
       self.expect_token(TokenEnum.ID)
@@ -144,7 +142,6 @@ class Parser:
     while self.check_token(TokenEnum.ID):
       self.expect_token(TokenEnum.ID)
 
-      # IDs opcionais separados por vírgula
       while self.check_token(TokenEnum.COMMA):
         self.expect_token(TokenEnum.COMMA)
         self.expect_token(TokenEnum.ID)
@@ -202,17 +199,15 @@ class Parser:
     self.expect_token(TokenEnum.PARA)
     self.expect_token(TokenEnum.ID)
     
-    # Sintaxe: PARA id DE inicio ATE fim [FACA]
     self.expect_token(TokenEnum.DE)
-    self.grammar_arithmetic_term() # Inicio (valor ou id)
+    self.grammar_arithmetic_term()
     
     self.expect_token(TokenEnum.ATE)
-    self.grammar_arithmetic_term() # Fim definition
+    self.grammar_arithmetic_term() 
     
-    # Passo opcional
     if self.check_token(TokenEnum.PASSO):
       self.expect_token(TokenEnum.PASSO)
-      self.grammar_arithmetic_term() # Passo value
+      self.grammar_arithmetic_term() 
 
     if self.check_token(TokenEnum.FACA):
         self.expect_token(TokenEnum.FACA)
@@ -239,13 +234,11 @@ class Parser:
     if self.check_token(TokenEnum.ID):
       self.expect_token(TokenEnum.ID)
 
-      # Aceita métodos/propriedades encadeados em expressões (ex: escreva(texto.upper()))
       while self.check_token(TokenEnum.PONTO):
           self.expect_token(TokenEnum.PONTO)
           self.expect_token(TokenEnum.ID)
           
       if self.check_token(TokenEnum.PARAB):
-          # É uma chamada de método que retorna valor
           self.expect_token(TokenEnum.PARAB)
           if not self.check_token(TokenEnum.PARFE):
               self.grammar_arithmetic_expression()
@@ -254,7 +247,6 @@ class Parser:
                   self.grammar_arithmetic_expression()
           self.expect_token(TokenEnum.PARFE)
       else:
-          # É apenas uma variável/propriedade (ex: pessoa.idade)
           while self.check_token(TokenEnum.COLCHETEA):
               self.expect_token(TokenEnum.COLCHETEA)
               self.grammar_arithmetic_expression()
@@ -262,7 +254,12 @@ class Parser:
 
     elif self.check_token(TokenEnum.NOVO):
       self.expect_token(TokenEnum.NOVO)
-      self.expect_token(TokenEnum.ID)
+      
+      if self.check_token(TokenEnum.TIPO):
+          self.expect_token(TokenEnum.TIPO)
+      else:
+          self.expect_token(TokenEnum.ID)
+          
       self.expect_token(TokenEnum.PARAB) # (
       
       if not self.check_token(TokenEnum.PARFE):
@@ -290,14 +287,11 @@ class Parser:
     elif self.check_token(TokenEnum.CHAVEA):
       self.expect_token(TokenEnum.CHAVEA)
       
-      # Verifica se não é um dicionário vazio {}
       if not self.check_token(TokenEnum.CHAVEF):
-          # Lê o primeiro par -> Chave : Valor
           self.grammar_arithmetic_expression() # Chave
           self.expect_token(TokenEnum.COLON)   # :
           self.grammar_arithmetic_expression() # Valor
           
-          # Lê os próximos pares se houver vírgula
           while self.check_token(TokenEnum.COMMA):
               self.expect_token(TokenEnum.COMMA)   # ,
               self.grammar_arithmetic_expression() # Chave
@@ -350,10 +344,9 @@ class Parser:
 
   def grammar_function_declaration(self):
     self.expect_token(TokenEnum.FUNCAO)
-    self.expect_token(TokenEnum.ID)     # Nome da função
+    self.expect_token(TokenEnum.ID)     
     self.expect_token(TokenEnum.PARAB)  # (
     
-    # Parâmetros opcionais (ex: a, b)
     if self.check_token(TokenEnum.ID):
       self.expect_token(TokenEnum.ID)
       while self.check_token(TokenEnum.COMMA):
@@ -362,7 +355,6 @@ class Parser:
         
     self.expect_token(TokenEnum.PARFE)  # )
     
-    # Corpo da função
     while not self.check_token(TokenEnum.FIMFUNCAO):
       self.statement()
       
