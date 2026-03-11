@@ -34,6 +34,7 @@ class CodeGenerator:
         self.add_line("# -*- coding: utf-8 -*-")
         self.add_line("import sys")
         self.add_line("import math")
+        self.add_line("import heapq")
         self.add_line("class _S(str):")
         self.add_line("    def __add__(self, other):")
         self.add_line("        if other is True: other = 'verdadeiro'")
