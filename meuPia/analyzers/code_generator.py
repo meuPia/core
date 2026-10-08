@@ -1,6 +1,7 @@
 from typing import Dict, List
 from ..utils.builtins import CONSTANTES_BUILTIN, FUNCOES_BUILTIN, METODOS, TIPOS_CONTEXTUAIS
 from ..utils.token_enum import TokenEnum
+from .syntax_analyzer import Parser
 
 class CodeGenerator:
     def __init__(self, lexemePairs: List[Dict[str, str]]):
@@ -9,6 +10,7 @@ class CodeGenerator:
         self.python_code = []
         self.indent_level = 0
         self.var_types = {}
+        self.local_types = {} # tipos das variaveis locais do def atual (funcao, metodo ou main)
         self.user_names = self.collect_user_names()
 
     def add_line(self, line):
@@ -20,13 +22,22 @@ class CodeGenerator:
         names = set()
         pairs = self.lexeme_pairs
         in_var_block = False
+        in_body = False # dentro de funcao, metodo ou inicio, 'var' e declaracao local
         i = 0
         while i < len(pairs):
             token = pairs[i]['token']
-            if token == TokenEnum.VAR.name:
+            if token == TokenEnum.VAR.name and in_body:
+                linhas, i = Parser.ler_declaracao_local(pairs, i)
+                for linha in linhas:
+                    names.update(nome for nome, _ in linha['nomes'])
+                continue
+            elif token == TokenEnum.VAR.name:
                 in_var_block = True
+            elif token == TokenEnum.FIMFUNCAO.name:
+                in_body = False
             elif token in (TokenEnum.FUNCAO.name, TokenEnum.CLASSE.name, TokenEnum.METODO.name, TokenEnum.INICIO.name):
                 in_var_block = False
+                in_body = token != TokenEnum.CLASSE.name
                 if token in (TokenEnum.FUNCAO.name, TokenEnum.CLASSE.name) and i + 1 < len(pairs):
                     names.add(pairs[i + 1]['lexeme'])
                 if token in (TokenEnum.FUNCAO.name, TokenEnum.METODO.name):
@@ -181,6 +192,7 @@ class CodeGenerator:
             self.advance() # INICIO
         
         self.add_line("def main():")
+        self.local_types = {}
         self.indent_level += 1
         if self.var_types:
             self.add_line(f"global {', '.join(self.var_types.keys())}")
@@ -212,23 +224,25 @@ class CodeGenerator:
             tipo = self.current_lexeme()
             self.advance() # TIPO
             
-            if tipo == "inteiro":
-                val_inicial = "0"
-            elif tipo == "real" or tipo == "float":
-                val_inicial = "0.0"
-            elif tipo == "dicionario": 
-                val_inicial = "{}"
-            elif tipo == "logico":
-                val_inicial = "False"
-            elif tipo == "lista":
-                val_inicial = "[]"
-            elif tipo.lower() == "filaprioridade": 
-                val_inicial = "FilaPrioridade()"
-            else:
-                val_inicial = "_S('')"
             for var_name in ids:
                 self.var_types[var_name] = tipo
-                self.add_line(f"{var_name} = {val_inicial}")
+                self.add_line(f"{var_name} = {self.valor_inicial(tipo)}")
+
+    def valor_inicial(self, tipo: str) -> str:
+        # Valor com que toda variavel declarada (global ou local) comeca
+        if tipo == "inteiro":
+            return "0"
+        elif tipo == "real" or tipo == "float":
+            return "0.0"
+        elif tipo == "dicionario": 
+            return "{}"
+        elif tipo == "logico":
+            return "False"
+        elif tipo == "lista":
+            return "[]"
+        elif tipo.lower() == "filaprioridade": 
+            return "FilaPrioridade()"
+        return "_S('')"
 
     def gen_statement(self):
         if self.check_token(TokenEnum.ID):
@@ -260,8 +274,25 @@ class CodeGenerator:
             self.advance()
             self.add_line("break")
 
+        elif self.check_token(TokenEnum.VAR):
+            self.gen_local_declaration()
+
         else:
             self.advance()
+
+    def gen_local_declaration(self):
+        # Locais viram atribuicoes comuns: o Python ja as trata como locais do def (nao estao no 'global')
+        linhas, fim = Parser.ler_declaracao_local(self.lexeme_pairs, self.pos)
+        for linha in linhas:
+            if linha['expressao']:
+                self.pos, fim_expr = linha['expressao']
+                valor = self.gen_expression(fim=fim_expr)
+            else:
+                valor = self.valor_inicial(linha['tipo'])
+            for nome, _ in linha['nomes']:
+                self.local_types[nome] = linha['tipo']
+                self.add_line(f"{nome} = {valor}")
+        self.pos = fim
 
     def gen_enquanto(self):
         self.advance() # ENQUANTO
@@ -334,7 +365,7 @@ class CodeGenerator:
         var_name = self.current_lexeme()
         self.advance() # ID
         
-        tipo_var = self.var_types.get(var_name)
+        tipo_var = self.local_types.get(var_name, self.var_types.get(var_name))
         
         if tipo_var == 'inteiro':
             self.add_line(f"{var_name} = int(input())") 
@@ -402,12 +433,14 @@ class CodeGenerator:
         self.end_block(start)
         self.advance() # FIMPARA
     
-    def gen_expression(self):
+    def gen_expression(self, fim=None):
         expr_parts = []
         paren_balance = 0
         last_token_type = None
         
         while True:
+            if fim is not None and self.pos >= fim:
+                break # Limite da expressao ja conhecido pela gramatica
             t = self.current_token()
             l = self.current_lexeme()
             
@@ -515,6 +548,7 @@ class CodeGenerator:
         return "".join(expr_parts)
 
     def gen_function_definition(self):
+        self.local_types = {}
         self.advance() # FUNCAO
         func_name = self.current_lexeme()
         self.advance() # ID
@@ -573,6 +607,7 @@ class CodeGenerator:
         self.add_line("")
 
     def gen_method_definition(self):
+        self.local_types = {}
         self.advance() # METODO
         func_name = self.current_lexeme()
         self.advance() # ID
