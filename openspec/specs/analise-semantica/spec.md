@@ -8,12 +8,13 @@ Define quais nomes um programa pode usar em cada escopo (`inicio`, `funcao`, `me
 
 ### Requirement: Nomes válidos em cada escopo
 Dentro de `inicio`, o compilador SHALL aceitar como nome todo identificador que seja:
-- variável do bloco `var`;
+- variável do bloco `var` global;
+- variável local declarada no `inicio` em uma linha anterior;
 - nome de `funcao` ou de `classe`;
 - builtin;
 - chamada de função (com parênteses).
 
-Dentro de `funcao` ou `metodo`, SHALL aceitar esses mesmos nomes e também os parâmetros. Dentro de `metodo`, `self` também é aceito.
+Dentro de `funcao` ou `metodo`, SHALL aceitar a variável global, o nome de `funcao` ou `classe`, o builtin e a chamada de função, além dos parâmetros e das variáveis locais declaradas naquele mesmo corpo em uma linha anterior. Dentro de `metodo`, `self` também é aceito. Variáveis locais do `inicio` e de outros corpos SHALL não ser aceitas.
 
 Fora desses casos, um identificador SHALL causar erro semântico de variável não declarada.
 
@@ -28,6 +29,14 @@ Fora desses casos, um identificador SHALL causar erro semântico de variável n�
 #### Scenario: Variável não declarada dentro de método
 - **WHEN** o programa define `classe P metodo m() escreva(zzz) fim_funcao fim_classe`
 - **THEN** a compilação falha com erro semântico citando `zzz`
+
+#### Scenario: Variável local aceita depois da declaração
+- **WHEN** uma função contém `var t: inteiro <- 1` e, depois, `retorne t + 1`
+- **THEN** a análise semântica aceita `t`
+
+#### Scenario: Var local não vira global
+- **WHEN** uma função declara `var t: inteiro` e o `inicio` contém `escreva(t)`
+- **THEN** a compilação falha com erro semântico citando `t`
 
 ### Requirement: Classe depois do bloco var
 Declarar uma `classe` depois de um bloco `var` SHALL encerrar esse bloco. Os identificadores dentro da classe (nomes de métodos, parâmetros, atributos) SHALL não ser registrados como variáveis globais.

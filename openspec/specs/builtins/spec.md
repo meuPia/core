@@ -7,7 +7,7 @@ Define as funções, constantes e métodos nativos do meuPiá (tamanho, matemát
 ## Requirements
 
 ### Requirement: Nomes declarados pelo usuário têm prioridade sobre builtins
-Um nome declarado pelo programa SHALL sempre se referir à declaração do usuário em todo o programa, mesmo quando coincide com um builtin. Contam como declaração: variável do bloco `var`, parâmetro de `funcao` ou `metodo`, nome de `funcao` e nome de `classe`. O builtin com esse nome fica indisponível no programa. Os builtins cobertos por esta regra são `tamanho`, `raiz`, `potencia`, `seno`, `cosseno`, `tangente`, `teto`, `piso`, `pi`, `absoluto`, `verdadeiro`, `falso`, `filaDupla` e `filaPrioridade`.
+Um nome declarado pelo programa SHALL sempre se referir à declaração do usuário em todo o programa, mesmo quando coincide com um builtin. Contam como declaração: variável do bloco `var` global, variável local declarada com `var` em `funcao`, `metodo` ou `inicio`, parâmetro de `funcao` ou `metodo`, nome de `funcao` e nome de `classe`. O builtin com esse nome fica indisponível no programa. Os builtins cobertos por esta regra são `tamanho`, `raiz`, `potencia`, `seno`, `cosseno`, `tangente`, `teto`, `piso`, `pi`, `absoluto`, `verdadeiro`, `falso`, `filaDupla` e `filaPrioridade`.
 
 #### Scenario: Variável chamada pi
 - **WHEN** o programa declara `pi: inteiro` e contém `pi <- 3` e `escreva(pi)`
@@ -24,6 +24,10 @@ Um nome declarado pelo programa SHALL sempre se referir à declaração do usuá
 #### Scenario: Builtin disponível quando não há conflito
 - **WHEN** o programa não declara `raiz` e contém `escreva(raiz(9))`
 - **THEN** a execução imprime `3.0`
+
+#### Scenario: Variável local chamada piso
+- **WHEN** uma função contém `var piso: inteiro <- 2` e `retorne piso`, e o programa contém `escreva(f())`
+- **THEN** a execução imprime `2`
 
 ### Requirement: Constantes builtin sem parênteses
 A constante `pi` SHALL poder ser usada como valor, sem parênteses, quando o programa não declara um nome `pi`.

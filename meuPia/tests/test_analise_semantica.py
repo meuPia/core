@@ -118,3 +118,15 @@ def test_acesso_a_atributo_sem_chamada():
 
 def test_atributo_encadeado_em_self():
     compilar(programa('', antes='classe P\nmetodo m()\nself.pos.x <- 1\nfim_funcao\nfim_classe'))
+
+
+# --- Variaveis locais nos escopos ---
+
+def test_variavel_local_aceita_depois_da_declaracao():
+    codigo = programa('escreva(f())', antes='funcao f()\nvar t: inteiro <- 1\nretorne t + 1\nfim_funcao')
+    assert executar(codigo) == '2'
+
+
+def test_var_local_nao_vira_global():
+    codigo = programa('escreva(t)', antes='funcao f()\nvar t: inteiro\nfim_funcao')
+    assert '"t"' in erro_de(codigo, SemanticError)

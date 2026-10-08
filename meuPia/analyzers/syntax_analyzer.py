@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from ..utils.builtins import TIPOS_CONTEXTUAIS
 from ..utils.erros import ErroCompilacao, descrever_token, posicao
@@ -11,6 +11,7 @@ class Parser:
   def __init__(self, lexemePairs: List[Dict[str, str]]):
     self.lexeme_pairs = lexemePairs
     self.pos = 0
+    self.profundidade_bloco = 0 # > 0 dentro de se/senao/enquanto/para
 
   def current_token(self) -> str:
     if self.pos < len(self.lexeme_pairs):
@@ -104,8 +105,42 @@ class Parser:
       self.expect_token(TokenEnum.CONTINUE)
     elif self.check_token(TokenEnum.INTERROMPA):
       self.expect_token(TokenEnum.INTERROMPA)
+    elif self.check_token(TokenEnum.VAR):
+      if self.profundidade_bloco > 0:
+        raise self.erro('declare variáveis com var fora de blocos se, enquanto e para')
+      self.grammar_local_declaration()
     else:
       raise self.erro(f'comando inesperado: {self.descrever_atual()}')
+
+  def block_statements(self, fim: List[TokenEnum]):
+    # Corpo de se/senao/enquanto/para: comandos ate um dos tokens de fim
+    self.profundidade_bloco += 1
+    while not self.check_token_any(fim):
+      self.statement()
+    self.profundidade_bloco -= 1
+
+  def is_declaration_line(self) -> bool:
+    # Uma linha de declaracao comeca com 'nome,' ou 'nome:'; nenhum comando comeca assim
+    return self.check_token(TokenEnum.ID) and self.peek_next_token() in (TokenEnum.COMMA.name, TokenEnum.COLON.name)
+
+  @staticmethod
+  def ler_declaracao_local(lexeme_pairs: List[Dict[str, str]], pos: int) -> Tuple[List[dict], int]:
+    """Le o 'var' local que comeca em 'pos' usando a propria gramatica.
+
+    Retorna as linhas (nomes com posicao, tipo e intervalo [inicio, fim) da expressao de valor, ou None)
+    e a posicao logo depois da declaracao. Usado pelo semantico e pelo gerador.
+    """
+    parser = Parser(lexeme_pairs)
+    parser.pos = pos
+    linhas = parser.grammar_local_declaration()
+    return linhas, parser.pos
+
+  def grammar_local_declaration(self) -> List[dict]:
+    self.expect_token(TokenEnum.VAR)
+    linhas = [self.grammar_declaration_line(permite_valor=True)]
+    while self.is_declaration_line():
+      linhas.append(self.grammar_declaration_line(permite_valor=True))
+    return linhas
 
   def grammar_id_statement(self):
     self.expect_token(TokenEnum.ID)
@@ -142,17 +177,34 @@ class Parser:
     self.expect_token(TokenEnum.VAR)
 
     while self.check_token(TokenEnum.ID):
+      self.grammar_declaration_line(permite_valor=False)
+
+  def grammar_declaration_line(self, permite_valor: bool) -> dict:
+    # nome1, nome2: tipo [<- expressao]  (valor so com um nome e so em declaracoes locais)
+    nomes = [(self.current_lexeme(), self.pos)]
+    self.expect_token(TokenEnum.ID)
+
+    while self.check_token(TokenEnum.COMMA):
+      self.expect_token(TokenEnum.COMMA)
+      nomes.append((self.current_lexeme(), self.pos))
       self.expect_token(TokenEnum.ID)
 
-      while self.check_token(TokenEnum.COMMA):
-        self.expect_token(TokenEnum.COMMA)
-        self.expect_token(TokenEnum.ID)
+    self.expect_token(TokenEnum.COLON)
+    tipo = self.current_lexeme()
+    if self.check_token(TokenEnum.ID) and self.current_lexeme() in TIPOS_CONTEXTUAIS:
+      self.expect_token(TokenEnum.ID)
+    else:
+      self.expect_token(TokenEnum.TIPO)
 
-      self.expect_token(TokenEnum.COLON)
-      if self.check_token(TokenEnum.ID) and self.current_lexeme() in TIPOS_CONTEXTUAIS:
-        self.expect_token(TokenEnum.ID)
-      else:
-        self.expect_token(TokenEnum.TIPO)
+    linha = {'nomes': nomes, 'tipo': tipo, 'expressao': None}
+    if permite_valor and self.check_token(TokenEnum.ATR):
+      if len(nomes) > 1:
+        raise self.erro('só é possível dar um valor inicial quando a linha declara uma única variável')
+      self.expect_token(TokenEnum.ATR)
+      inicio = self.pos
+      self.grammar_expression()
+      linha['expressao'] = (inicio, self.pos)
+    return linha
 
   def grammar_command_escreva(self):
     self.expect_token(TokenEnum.ESCREVA)
@@ -174,13 +226,11 @@ class Parser:
     self.grammar_expression()
 
     self.expect_token(TokenEnum.ENTAO)
-    while not self.check_token_any([TokenEnum.SENAO, TokenEnum.FIMSE]):
-      self.statement()
+    self.block_statements([TokenEnum.SENAO, TokenEnum.FIMSE])
     
     if self.check_token(TokenEnum.SENAO):
       self.expect_token(TokenEnum.SENAO)
-      while not self.check_token(TokenEnum.FIMSE):
-        self.statement()
+      self.block_statements([TokenEnum.FIMSE])
 
     self.expect_token(TokenEnum.FIMSE)
 
@@ -191,8 +241,7 @@ class Parser:
     if self.check_token(TokenEnum.FACA):
         self.expect_token(TokenEnum.FACA)
     
-    while not self.check_token(TokenEnum.FIMENQUANTO):
-      self.statement()
+    self.block_statements([TokenEnum.FIMENQUANTO])
 
     self.expect_token(TokenEnum.FIMENQUANTO)
 
@@ -213,8 +262,7 @@ class Parser:
     if self.check_token(TokenEnum.FACA):
         self.expect_token(TokenEnum.FACA)
 
-    while not self.check_token(TokenEnum.FIMPARA):
-      self.statement()
+    self.block_statements([TokenEnum.FIMPARA])
 
     self.expect_token(TokenEnum.FIMPARA)
 

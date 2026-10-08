@@ -122,6 +122,48 @@ fimalgoritmo
 
 ```
 
+### 3. Variáveis Locais
+
+Além das variáveis globais do bloco `var` (antes de `funcao` e `inicio`), é possível declarar variáveis **locais** com `var` dentro de uma `funcao`, de um `metodo` ou do bloco `inicio`. Existem duas formas, que podem ser misturadas no mesmo `var`:
+
+* **Com valor:** `var nome: tipo <- expressao` (ou `= expressao`). Só pode ter um nome por linha.
+* **Em bloco:** `var` seguido de linhas `nome1, nome2: tipo`. Cada variável começa com o valor inicial do tipo (`0`, `0.0`, `""`, `falso`, lista vazia…).
+
+```portugol
+algoritmo "Medias"
+
+funcao media(a, b)
+    var soma: inteiro <- a + b
+    var
+        resultado: real
+        passos: inteiro
+    resultado <- soma / 2
+    retorne resultado
+fim_funcao
+
+funcao fatorial(n)
+    var r: inteiro <- 1
+    se n > 1 entao
+        r <- n * fatorial(n - 1)   // cada chamada tem o seu próprio 'r'
+    fim_se
+    retorne r
+fim_funcao
+
+inicio
+    escreva("Média: ", media(7, 8))
+    var f: inteiro <- fatorial(5)
+    escreva("5! = ", f)
+fim_algoritmo
+```
+
+Regras:
+
+* **Onde:** em qualquer ponto do nível principal do corpo da `funcao`, do `metodo` ou do `inicio`. Dentro de `se`, `enquanto` e `para` a declaração é erro: declare a variável antes do bloco.
+* **Escopo:** a variável só existe no corpo onde foi declarada, da linha da declaração até o fim do corpo. Locais do `inicio` não são vistas dentro das funções.
+* **Tempo de vida:** cada chamada da função cria variáveis novas (inclusive em recursão).
+* **Nomes:** uma local não pode ter o nome de uma variável global, de um parâmetro, de outra local do mesmo corpo, de uma função, de uma classe nem ser `self`.
+* **Ordem:** usar a variável antes da linha do `var` é erro (`a variável "x" foi usada antes de ser declarada`).
+
 
 
 ## 🙌 Credits

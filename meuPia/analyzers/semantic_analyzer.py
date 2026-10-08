@@ -3,6 +3,7 @@ from typing import Dict, List
 from ..utils.builtins import CONSTANTES_BUILTIN, FUNCOES_BUILTIN
 from ..utils.erros import ErroCompilacao, posicao
 from ..utils.token_enum import TokenEnum
+from .syntax_analyzer import Parser
 
 class SemanticError(ErroCompilacao):
   etapa = 'semântico'
@@ -12,6 +13,9 @@ class SemanticAnalyzer:
     self.lexeme_pairs = lexemePairs
     self.declared_vars = []
     self.callable_names = set() # nomes de funcao e classe
+    self.params = set()
+    self.locais_visiveis = set()
+    self.declaradas_no_corpo = {}
     self.pos = 0
 
   def current_token(self) -> str:
@@ -49,18 +53,23 @@ class SemanticAnalyzer:
   # Validations
   # ----------------
   def get_declared_variables(self):
-    # Pre-passagem: variaveis globais (blocos var) e nomes de funcao e classe
+    # Pre-passagem: variaveis globais (blocos var do topo) e nomes de funcao e classe
     in_var_block = False
+    in_body = False # 'var' dentro de funcao/metodo e declaracao local, nao global
 
     while self.pos < len(self.lexeme_pairs):
-      if self.check_token(TokenEnum.VAR):
+      if self.check_token(TokenEnum.VAR) and not in_body:
         in_var_block = True
 
       elif self.check_token_any([TokenEnum.FUNCAO, TokenEnum.CLASSE, TokenEnum.METODO]):
         # Qualquer declaracao encerra o bloco var
         in_var_block = False
+        in_body = not self.check_token(TokenEnum.CLASSE)
         if not self.check_token(TokenEnum.METODO) and self.token_at(self.pos + 1) == TokenEnum.ID.name:
           self.callable_names.add(self.lexeme_pairs[self.pos + 1]['lexeme'])
+
+      elif self.check_token(TokenEnum.FIMFUNCAO):
+        in_body = False
 
       elif self.check_token(TokenEnum.INICIO):
         break
@@ -70,7 +79,7 @@ class SemanticAnalyzer:
 
         if self.is_variable_declared(lexeme):
           raise self.erro(f'a variável "{lexeme}" foi declarada mais de uma vez')
-
+        
         self.declared_vars.append(self.lexeme_pairs[self.pos])
 
       self.advance()
@@ -78,12 +87,11 @@ class SemanticAnalyzer:
   def validate_variable_usage(self):
     self.pos = 0
     in_code_block = False
-    local_vars = set()
 
     while self.pos < len(self.lexeme_pairs):
       if self.check_token(TokenEnum.INICIO):
         in_code_block = True
-        local_vars = set()
+        self.enter_body(set())
 
       elif self.check_token(TokenEnum.CLASSE):
         self.advance() # Passa o nome da classe
@@ -95,25 +103,95 @@ class SemanticAnalyzer:
         self.advance() # Passa o '('
 
         # Parametros sao locais ao corpo; metodos tambem enxergam 'self'
-        local_vars = {'self'} if is_method else set()
+        params = {'self'} if is_method else set()
         while self.pos < len(self.lexeme_pairs) and not self.check_token(TokenEnum.PARFE):
           if self.check_token(TokenEnum.ID):
-            local_vars.add(self.current_lexeme())
+            params.add(self.current_lexeme())
           self.advance()
 
         in_code_block = True
+        self.enter_body(params)
 
       elif self.check_token(TokenEnum.FIMFUNCAO):
         in_code_block = False
-        local_vars = set()
+        self.enter_body(set())
+
+      elif in_code_block and self.check_token(TokenEnum.VAR):
+        self.validate_local_declaration()
+        continue # validate_local_declaration ja posiciona depois da declaracao
 
       elif in_code_block and self.check_token(TokenEnum.ID):
-        lexeme = self.current_lexeme()
-
-        if not self.is_valid_name(lexeme, local_vars):
-          raise self.erro(f'a variável "{lexeme}" não foi declarada no bloco var')
+        self.validate_identifier()
 
       self.advance()
+
+  def enter_body(self, params: set):
+    # Novo corpo (funcao, metodo ou inicio): so os parametros sao visiveis no comeco
+    self.params = params
+    self.locais_visiveis = set(params)
+    self.declaradas_no_corpo = self.scan_body_declarations(self.pos)
+
+  def scan_body_declarations(self, inicio: int) -> dict:
+    # Todas as variaveis locais declaradas no corpo, para diferenciar "usada antes" de "nao declarada"
+    declaradas = {}
+    j = inicio
+    while self.token_at(j) not in (TokenEnum.FIMFUNCAO.name, TokenEnum.FIMALGORITMO.name, TokenEnum.END_OF_FILE.name):
+      if self.token_at(j) == TokenEnum.VAR.name:
+        linhas, j = Parser.ler_declaracao_local(self.lexeme_pairs, j)
+        for linha in linhas:
+          for nome, posicao_nome in linha['nomes']:
+            declaradas.setdefault(nome, posicao_nome)
+      else:
+        j += 1
+    return declaradas
+
+  def validate_local_declaration(self):
+    linhas, fim = Parser.ler_declaracao_local(self.lexeme_pairs, self.pos)
+
+    for linha in linhas:
+      nomes_da_linha = set()
+      for nome, posicao_nome in linha['nomes']:
+        conflito = self.local_name_conflict(nome, nomes_da_linha)
+        if conflito:
+          raise self.erro_em(conflito, posicao_nome)
+        nomes_da_linha.add(nome)
+
+      # O valor inicial e avaliado antes de a variavel existir
+      if linha['expressao']:
+        inicio_expr, fim_expr = linha['expressao']
+        for indice in range(inicio_expr, fim_expr):
+          self.pos = indice
+          if self.check_token(TokenEnum.ID):
+            self.validate_identifier()
+
+      self.locais_visiveis |= nomes_da_linha
+
+    self.pos = fim
+
+  def local_name_conflict(self, nome: str, nomes_da_linha: set) -> str:
+    if nome == 'self' and 'self' in self.params:
+      return '"self" é reservado dentro de métodos e não pode ser declarado com var'
+    if nome in self.params:
+      return f'"{nome}" já é um parâmetro deste bloco; escolha outro nome para a variável'
+    if self.is_variable_declared(nome):
+      return f'a variável "{nome}" já existe como variável global; escolha outro nome'
+    if nome in self.locais_visiveis or nome in nomes_da_linha:
+      return f'a variável "{nome}" já foi declarada neste bloco'
+    if nome in self.callable_names:
+      return f'"{nome}" já é o nome de uma função ou classe; escolha outro nome para a variável'
+    return ''
+
+  def validate_identifier(self):
+    lexeme = self.current_lexeme()
+    if self.is_valid_name(lexeme, self.locais_visiveis):
+      return
+    if lexeme in self.declaradas_no_corpo:
+      raise self.erro(f'a variável "{lexeme}" foi usada antes de ser declarada')
+    raise self.erro(f'a variável "{lexeme}" não foi declarada no bloco var')
+
+  def erro_em(self, descricao: str, pos: int) -> SemanticError:
+    linha, coluna = posicao(self.lexeme_pairs, pos)
+    return SemanticError(descricao, linha, coluna)
 
   def is_valid_name(self, lexeme: str, local_vars: set) -> bool:
     if self.token_at(self.pos - 1) == TokenEnum.PONTO.name:
