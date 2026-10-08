@@ -79,7 +79,7 @@ def test_syntax_error_missing_tokens():
     parser = Parser(lexemes)
     with pytest.raises(SyntacticError) as excinfo:
         parser.parse()
-    assert 'Esperado "então"' in str(excinfo.value)
+    assert 'esperado "entao"' in str(excinfo.value)
 
 def test_syntax_error_invalid_var_block():
     code = [

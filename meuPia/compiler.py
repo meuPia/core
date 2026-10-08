@@ -1,5 +1,5 @@
 import os
-import sys # <-- Adicione esta linha no topo
+import sys
 from .analyzers import lexical_analyzer
 from .analyzers import syntax_analyzer
 from .analyzers import semantic_analyzer
@@ -13,7 +13,7 @@ def main(input_file: str = None, output_path: str = None):
             else:
                 print("Erro: Nenhum arquivo informado.")
                 print("Uso correto: meupia <arquivo.por>")
-                return # Sai do programa graciosamente
+                return 2 # Erro de uso
         
         full_path = input_file
         filename_only = os.path.basename(full_path)
@@ -42,6 +42,13 @@ def main(input_file: str = None, output_path: str = None):
         print('Generating Python code...')
         generator = CodeGenerator(lexeme_pairs)
         python_code = generator.generate()
+
+        # Garante que o Lab nunca receba um main.py quebrado por bug interno do gerador
+        try:
+            compile(python_code, filename_only, 'exec')
+        except SyntaxError as e:
+            print(f'[COMPILATION ERROR]:\n\tErro interno do compilador: código Python gerado inválido ({e.msg}, linha {e.lineno})')
+            return 1
         
         # Save Output
         if output_path:
@@ -59,14 +66,15 @@ def main(input_file: str = None, output_path: str = None):
             
         print(f'✅ Code generated successfully at {final_output_path}')
         print('[COMPILED SUCCESSFULLY]')
+        return 0
 
     except Exception as e:
         print(f'[COMPILATION ERROR]:\n\t{e}')
+        return 1
 
 
 if __name__ == "__main__":
-    import sys
     if len(sys.argv) > 1:
-        main(sys.argv[1])
+        sys.exit(main(sys.argv[1]))
     else:
-        main()
+        sys.exit(main())

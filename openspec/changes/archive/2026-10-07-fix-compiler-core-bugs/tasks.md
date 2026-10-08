@@ -50,17 +50,17 @@
 
 ## 10. Análise semântica
 
-- [ ] 10.1 Escrever em `test_analise_semantica.py` os cenários da spec `analise-semantica` (escopos, classe depois de `var`, atributos depois de `.`, `self`, método com variável não declarada, declaração duplicada com linha e coluna). Verificar que falham.
-- [ ] 10.2 Reescrever o `SemanticAnalyzer` como máquina de estados com pré-passagem e escopos de `funcao` e `metodo`, usando `meuPia/utils/builtins.py` para os nomes builtin (D10). Verificar que 10.1 e o `test_semantic.py` passam.
+- [x] 10.1 Escrever em `test_analise_semantica.py` os cenários da spec `analise-semantica` (escopos, classe depois de `var`, atributos depois de `.`, `self`, método com variável não declarada, declaração duplicada com linha e coluna). Verificar que falham.
+- [x] 10.2 Reescrever o `SemanticAnalyzer` como máquina de estados com pré-passagem e escopos de `funcao` e `metodo`, usando `meuPia/utils/builtins.py` para os nomes builtin (D10). Verificar que 10.1 e o `test_semantic.py` passam.
 
 ## 11. Exemplos, regressão e versão
 
-- [ ] 11.1 Atualizar `exemplos/smart_security.por` para a sintaxe atual: renomear a variável `classe` e trocar `fimenquanto`/`fimalgoritmo` por `fim_enquanto`/`fim_algoritmo`. Verificar compilando com `meupia exemplos/smart_security.por` (código de saída 0).
-- [ ] 11.2 Criar `test_regressao.py`, parametrizado sobre `exemplos/*.por` e `meuPia/input/*.por`, que compila cada arquivo e valida o Python gerado com `compile()`. Verificar que todos passam.
-- [ ] 11.3 Fazer o bump do `setup.py` para `1.2.0`. Verificar com `pip install -e .` seguido de `meupia --help` ou de uma compilação.
+- [x] 11.1 Atualizar `exemplos/smart_security.por` para a sintaxe atual: renomear a variável `classe` e trocar `fimenquanto`/`fimalgoritmo` por `fim_enquanto`/`fim_algoritmo`. Verificar compilando com `meupia exemplos/smart_security.por` (código de saída 0).
+- [x] 11.2 Criar `test_regressao.py`, parametrizado sobre `exemplos/*.por` e `meuPia/input/*.por`, que compila cada arquivo e valida o Python gerado com `compile()`. Verificar que todos passam.
+- [x] 11.3 Fazer o bump do `setup.py` para `1.2.0`. Verificar com `pip install -e .` seguido de `meupia --help` ou de uma compilação.
 
 ## 12. Verificação integrada
 
-- [ ] 12.1 Rodar `pytest --cov=meuPia/analyzers --cov=meuPia/compiler --cov-branch`. Verificar que todos os testes passam e que a cobertura de branches em `meuPia/analyzers` e `meuPia/compiler.py` é ≥ 90%.
-- [ ] 12.2 Compilar o `codigoInicial` dos 14 desafios de `../desafios/*.json` com um script descartável na scratchpad. Verificar que os 11 que compilavam continuam compilando, que só falham, por erro do próprio desafio, `fila_prioridade_simples` (aspa sobrando), `fio_de_ariadne` (parâmetro chamado `inicio`) e `radar_motoboy` (`mapa_global` não declarado). O `!=` e o tipo `lista` devem ser aceitos.
-- [ ] 12.3 Rodar `openspec validate fix-compiler-core-bugs --strict` e conferir a implementação contra cada requisito das 6 specs.
+- [x] 12.1 Rodar `pytest --cov=meuPia/analyzers --cov=meuPia/compiler --cov-branch`. Verificar que todos os testes passam e que a cobertura de branches em `meuPia/analyzers` e `meuPia/compiler.py` é ≥ 90%.
+- [x] 12.2 Compilar o `codigoInicial` dos 14 desafios de `../desafios/*.json` com um script descartável na scratchpad. Verificar que os 11 que compilavam continuam compilando, que só falham, por erro do próprio desafio, `fila_prioridade_simples` (aspa sobrando), `fio_de_ariadne` (parâmetro chamado `inicio`) e `radar_motoboy` (`mapa_global` não declarado). O `!=` e o tipo `lista` devem ser aceitos.
+- [x] 12.3 Rodar `openspec validate fix-compiler-core-bugs --strict` e conferir a implementação contra cada requisito das 6 specs.

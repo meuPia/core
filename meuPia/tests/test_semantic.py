@@ -34,7 +34,7 @@ def test_semantic_undeclared_variable():
     with pytest.raises(SemanticError) as excinfo:
         semantic.validate()
     
-    assert 'Undeclared variable "x"' in str(excinfo.value)
+    assert 'a variável "x" não foi declarada' in str(excinfo.value)
 
 def test_semantic_double_declaration():
     code = [
@@ -49,7 +49,7 @@ def test_semantic_double_declaration():
     with pytest.raises(SemanticError) as excinfo:
         semantic.validate()
         
-    assert 'Double declaration for variable "x"' in str(excinfo.value)
+    assert 'a variável "x" foi declarada mais de uma vez' in str(excinfo.value)
 
 def test_semantic_bypass_function_call():
     code = [
@@ -104,4 +104,4 @@ def test_semantic_undeclared_in_function():
     with pytest.raises(SemanticError) as excinfo:
         semantic.validate()
     
-    assert 'Undeclared variable "c"' in str(excinfo.value)
+    assert 'a variável "c" não foi declarada' in str(excinfo.value)

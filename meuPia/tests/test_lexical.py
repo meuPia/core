@@ -145,3 +145,53 @@ def test_scan_keyword_as_substring_with_underscore():
     
     assert tokens[3]['lexeme'] == 'filaPrioridade'
     assert tokens[3]['token'] == TokenEnum.TIPO.name
+
+def test_token_enum_sem_valores_repetidos():
+    # Valores repetidos viram alias silencioso no Enum (ex: LOGIGUAL is ATR)
+    assert len(TokenEnum.__members__) == len(list(TokenEnum))
+
+def test_scan_igualdade_dupla_distinta_de_atribuicao():
+    _, tokens = scan_line("x == 1", 1)
+    assert tokens[1]['token'] == TokenEnum.LOGIGUAL.name
+    assert TokenEnum.LOGIGUAL.name != TokenEnum.ATR.name
+
+def test_scan_diferente_com_exclamacao():
+    _, tokens = scan_line("x != 1", 1)
+    assert tokens[1]['token'] == TokenEnum.LOGDIFF.name
+    assert tokens[1]['lexeme'] == "!="
+
+def test_scan_exclamacao_sozinha_e_invalida():
+    with pytest.raises(LexicalError):
+        scan_line("x ! 1", 1)
+
+def test_scan_operador_resto():
+    _, tokens = scan_line("a % b mod c", 1)
+    assert [t['token'] for t in tokens] == [
+        TokenEnum.ID.name, TokenEnum.OPMOD.name, TokenEnum.ID.name, TokenEnum.OPMOD.name, TokenEnum.ID.name
+    ]
+
+def test_scan_mod_como_parte_de_nome():
+    _, tokens = scan_line("modulo", 1)
+    assert tokens[0]['token'] == TokenEnum.ID.name
+
+def test_scan_logico_e_lista_sao_identificadores():
+    # Tipos contextuais: so viram tipo na posicao de tipo do var ou depois de novo
+    _, tokens = scan_line("logico lista", 1)
+    assert [t['token'] for t in tokens] == [TokenEnum.ID.name, TokenEnum.ID.name]
+
+def test_scan_string_terminada_em_barra_invertida():
+    _, tokens = scan_line('escreva("a\\\\")', 1)
+    assert tokens[2]['token'] == TokenEnum.STRING.name
+    assert tokens[2]['lexeme'] == '"a\\\\"'
+    assert tokens[3]['token'] == TokenEnum.PARFE.name
+
+def test_scan_string_com_aspa_escapada():
+    _, tokens = scan_line('"diga \\"oi\\""', 1)
+    assert len(tokens) == 1
+    assert tokens[0]['lexeme'] == '"diga \\"oi\\""'
+
+def test_scan_string_nao_terminada_indica_coluna_da_aspa():
+    with pytest.raises(LexicalError) as excinfo:
+        scan_line('escreva("abc)', 3)
+    assert excinfo.value.linha == 3
+    assert excinfo.value.coluna == 9
