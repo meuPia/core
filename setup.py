@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="meupia-core",
-    version="1.1.20",
+    version="1.2.0",
     author="Henry Hamon",
     author_email="henryhamon@gmail.com",
     description="Compilador modular de Portugol para Python focado em educação.",
@@ -21,7 +21,7 @@ setup(
     
     # Dependências de desenvolvimento e testes
     extras_require={
-        "dev": ["pytest>=7.0.0"],
+        "dev": ["pytest>=7.0.0", "pytest-cov>=4.0.0"],
     },
     
     entry_points={

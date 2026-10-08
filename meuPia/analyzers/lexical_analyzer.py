@@ -2,13 +2,14 @@ import json
 import os
 from typing import Callable, List, NamedTuple, Optional
 
+from ..utils.erros import ErroCompilacao
 from ..utils.file_helper import read_lines_from_file
 from ..utils.token_enum import TokenEnum
 
 # OUTPUT_PATH_BASE removed, using argument instead
 
-class LexicalError(Exception):
-  pass
+class LexicalError(ErroCompilacao):
+  etapa = 'léxico'
 
 class TokenMatch(NamedTuple):
   start: int
@@ -98,7 +99,7 @@ def scan_line(line: str, lineNumber: int) -> tuple[str, List[str]]:
 
     if not match_found:
       # Unknown char
-      raise LexicalError(f'Unknown char "{line[i]}" at line {lineNumber}:{i+1}')
+      raise LexicalError(f'caractere desconhecido "{line[i]}"', lineNumber, i + 1)
 
   # Collapse multiple spaces into single space and trim the line
   new_line = ' '.join(''.join(new_line_parts).split())
@@ -113,13 +114,20 @@ def match_token_string(line: str, startIndex: int, lineNumber: int) -> Optional[
 
   i = startIndex + 1
   while i < len(line):
-    if line[i] == '"' and line[i - 1] != '\\':
-      break
+    if line[i] == '"':
+      # A aspa so e escapada se houver um numero impar de barras antes dela
+      barras = 0
+      j = i - 1
+      while j > startIndex and line[j] == '\\':
+        barras += 1
+        j -= 1
+      if barras % 2 == 0:
+        break
     i += 1
 
   # Couldnt find string end
   if i >= len(line):
-    raise LexicalError(f'Unterminated string starting at line {lineNumber}:{startIndex}')
+    raise LexicalError('texto sem aspas de fechamento (") nesta linha', lineNumber, startIndex + 1)
 
   end_index = i + 1
   return TokenMatch(start=startIndex, end=end_index, replacement=TokenEnum.STRING.name)
@@ -174,6 +182,7 @@ def match_token_keywords(line: str, startIndex: int, lineNumber: int) -> Optiona
     'metodo': TokenEnum.METODO,
     'novo': TokenEnum.NOVO,
     'fim_classe': TokenEnum.FIMCLASSE,
+    'mod': TokenEnum.OPMOD,
   }
 
   for keyword, token in keywords.items():
@@ -200,7 +209,7 @@ def match_token_logoperators(line: str, startIndex: int, lineNumber: int) -> Opt
 
   if char == '=' and next_char == '=':
     return TokenMatch(start=startIndex, end=startIndex + 2, replacement=TokenEnum.LOGIGUAL.name)
-  if char == '<' and next_char == '>':
+  if (char == '<' and next_char == '>') or (char == '!' and next_char == '='):
     return TokenMatch(start=startIndex, end=startIndex + 2, replacement=TokenEnum.LOGDIFF.name)
   if char == '<' and next_char == '=':
     return TokenMatch(start=startIndex, end=startIndex + 2, replacement=TokenEnum.LOGMENORIGUAL.name)
@@ -225,6 +234,8 @@ def match_token_mathoperators(line: str, startIndex: int, lineNumber: int) -> Op
     return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.OPMULTI.name)
   if char == '/':
     return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.OPDIVI.name)
+  if char == '%':
+    return TokenMatch(start=startIndex, end=startIndex + 1, replacement=TokenEnum.OPMOD.name)
   return None 
 
 def match_token_parentheses(line: str, startIndex: int, lineNumber: int) -> Optional[TokenMatch]:

@@ -43,7 +43,7 @@ def test_gen_multidimensional_array_fix():
     
     output = compile_snippet(code)
     assert "m = [[1, 2], [3, 4]]" in output
-    assert "print(m[0][1])" in output
+    assert "_escreva(m[0][1])" in output
 
 def test_gen_conditional():
     code = """algoritmo "Cond"
@@ -56,7 +56,7 @@ def test_gen_conditional():
     
     output = compile_snippet(code)
     assert "if x>0:" in output
-    assert "    print(x)" in output
+    assert "    _escreva(x)" in output
 
 def test_gen_loop_para():
     code = """algoritmo "Loop"
@@ -68,9 +68,9 @@ def test_gen_loop_para():
     fim_algoritmo"""
     
     output = compile_snippet(code)
-    # Range é inclusive no portugol, entao 1 ate 10 vira range(1, 10 + 1, 1)
-    assert "for i in range(1, 10 + 1, 1):" in output
-    assert "    print(i)" in output
+    # Range é inclusive no portugol nos dois sentidos, tratado por _faixa
+    assert "for i in _faixa(1, 10, 1):" in output
+    assert "    _escreva(i)" in output
 
 def test_gen_function_call_ia():
     code = """algoritmo "IA"
@@ -106,17 +106,17 @@ def test_gen_boolean_logic():
     # Check translation of operators
     assert "if (x>0) and (y<10) or ( not (z>0)):" in output
 
-def test_gen_plugin_import():
+def test_gen_unknown_plugin_import():
     code = """algoritmo "Plugin"
     usar "nlp"
     inicio
     fim_algoritmo"""
-    
+
     output = compile_snippet(code)
     # Check that default lib is NOT imported
     assert "from meuPia.lib.meupia_libs import *" not in output
-    # Check that plugin lib IS imported with new convention
-    assert "from meupia_nlp import *" in output
+    # Plugin desconhecido e tratado como arquivo local
+    assert "from nlp import *" in output
     assert "except ImportError:" in output
 
 def test_gen_default_import():
@@ -153,7 +153,7 @@ def test_gen_function_definition():
     # Verifica se a função foi criada no Python corretamente
     assert "def somar(a, b):" in output
     assert "return a+b" in output
-    assert "print(somar(10, 20))" in output
+    assert "_escreva(somar(10, 20))" in output
 
 def test_gen_direct_assignment():
     code = """algoritmo "GenIndex"
@@ -172,7 +172,7 @@ def test_gen_builtin_tamanho():
     fim_algoritmo"""
     
     output = compile_snippet(code)
-    assert "print(len(lista))" in output
+    assert "_escreva(len(lista))" in output
 
 def test_gen_deque_methods():
     code = """algoritmo "DequeAcademico"
@@ -239,7 +239,7 @@ def test_gen_unary_minus():
     fim_algoritmo"""
     
     output = compile_snippet(code)
-    assert "print(-1)" in output
+    assert "_escreva(-1)" in output
 
 def test_gen_fila_prioridade():
     code = """algoritmo "TesteHeap"
@@ -256,7 +256,7 @@ def test_gen_fila_prioridade():
     
     assert "fila = FilaPrioridade()" in output
     assert "fila.inserir(10)" in output
-    assert "print(fila.remover())" in output
+    assert "_escreva(fila.remover())" in output
 
 def test_gen_object_methods():
     code = """algoritmo "Obj"
@@ -267,7 +267,7 @@ def test_gen_object_methods():
     lista.append("d")
     fim_algoritmo"""
     output = compile_snippet(code)
-    assert 'print(lista.split(_S(",")))' in output
+    assert '_escreva(lista.split(_S(",")))' in output
     assert 'lista.append(_S("d"))' in output
 
 def test_gen_leia_typing():
@@ -306,7 +306,7 @@ def test_gen_builtin_methods():
     output = compile_snippet(code)
     assert "lista.append(99)" in output
     assert 'dict.update({_S("chave"): 1})' in output
-    assert 'print(dict.get(_S("chave")))' in output
+    assert '_escreva(dict.get(_S("chave")))' in output
 
 def test_gen_oop_class_and_instantiation():
     code = """algoritmo "OOPSimples"

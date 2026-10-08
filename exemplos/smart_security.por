@@ -6,7 +6,7 @@ var
     sensor_pin, led_pin: inteiro
     presenca: inteiro
     dados_imagem: inteiro
-    classe: inteiro
+    classe_detectada: inteiro
 inicio
     // Configuração IoT
     sensor_pin <- 4
@@ -30,9 +30,9 @@ inicio
             
             // Simula leitura de caracteristicas
             // Ex: Tamanho 175cm, Velocidade 4km/h
-            classe <- ia_prever([175, 4])
+            classe_detectada <- ia_prever([175, 4])
             
-            se classe = 1 entao
+            se classe_detectada = 1 entao
                 escreva("ALERTA: Humano detectado!")
                 iot_ligar(led_pin)
                 iot_esperar(2000)
@@ -43,5 +43,5 @@ inicio
         fim_se
         
         iot_esperar(500)
-    fimenquanto
-fimalgoritmo
+    fim_enquanto
+fim_algoritmo

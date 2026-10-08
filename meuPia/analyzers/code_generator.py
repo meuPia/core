@@ -1,4 +1,5 @@
 from typing import Dict, List
+from ..utils.builtins import CONSTANTES_BUILTIN, FUNCOES_BUILTIN, METODOS, TIPOS_CONTEXTUAIS
 from ..utils.token_enum import TokenEnum
 
 class CodeGenerator:
@@ -8,10 +9,58 @@ class CodeGenerator:
         self.python_code = []
         self.indent_level = 0
         self.var_types = {}
+        self.user_names = self.collect_user_names()
 
     def add_line(self, line):
         indent = "    " * self.indent_level
         self.python_code.append(f"{indent}{line}")
+
+    def collect_user_names(self) -> set:
+        # Nomes declarados pelo usuario (var, funcao, classe, parametros) tem prioridade sobre builtins
+        names = set()
+        pairs = self.lexeme_pairs
+        in_var_block = False
+        i = 0
+        while i < len(pairs):
+            token = pairs[i]['token']
+            if token == TokenEnum.VAR.name:
+                in_var_block = True
+            elif token in (TokenEnum.FUNCAO.name, TokenEnum.CLASSE.name, TokenEnum.METODO.name, TokenEnum.INICIO.name):
+                in_var_block = False
+                if token in (TokenEnum.FUNCAO.name, TokenEnum.CLASSE.name) and i + 1 < len(pairs):
+                    names.add(pairs[i + 1]['lexeme'])
+                if token in (TokenEnum.FUNCAO.name, TokenEnum.METODO.name):
+                    # Parametros: IDs entre '(' e ')' logo apos o nome
+                    j = i + 3
+                    while j < len(pairs) and pairs[j]['token'] != TokenEnum.PARFE.name:
+                        if pairs[j]['token'] == TokenEnum.ID.name:
+                            names.add(pairs[j]['lexeme'])
+                        j += 1
+            elif in_var_block and token == TokenEnum.ID.name:
+                is_type = i > 0 and pairs[i - 1]['token'] == TokenEnum.COLON.name
+                if not is_type:
+                    names.add(pairs[i]['lexeme'])
+            i += 1
+        return names
+
+    def map_identifier(self, name: str, after_dot: bool) -> str:
+        if after_dot:
+            return METODOS.get(name, name)
+        if name in self.user_names:
+            return name
+        if name in FUNCOES_BUILTIN:
+            return FUNCOES_BUILTIN[name]
+        return CONSTANTES_BUILTIN.get(name, name)
+
+    def begin_block(self) -> int:
+        # Marca o inicio do corpo de um bloco ja indentado
+        return len(self.python_code)
+
+    def end_block(self, start: int):
+        # Bloco sem nenhuma linha de corpo vira 'pass' para gerar Python valido
+        if len(self.python_code) == start:
+            self.add_line("pass")
+        self.indent_level -= 1
 
     def current_token(self) -> str:
         if self.pos < len(self.lexeme_pairs):
@@ -44,6 +93,16 @@ class CodeGenerator:
         self.add_line("        if other is True: other = 'verdadeiro'")
         self.add_line("        elif other is False: other = 'falso'")
         self.add_line("        return _S(str(other) + str(self))")
+        self.add_line("def _texto(valor):")
+        self.add_line("    if valor is True: return 'verdadeiro'")
+        self.add_line("    if valor is False: return 'falso'")
+        self.add_line("    return str(valor)")
+        self.add_line("def _escreva(*valores):")
+        self.add_line("    print(''.join(_texto(v) for v in valores))")
+        self.add_line("def _faixa(inicio, fim, passo):")
+        self.add_line("    # Intervalo do laco 'para': inclui o fim nos dois sentidos")
+        self.add_line("    if passo == 0: raise ValueError('passo do laço para não pode ser zero')")
+        self.add_line("    return range(inicio, fim + 1, passo) if passo > 0 else range(inicio, fim - 1, passo)")
         self.add_line("from collections import deque")
         self.add_line("class FilaPrioridade:")
         self.add_line("    def __init__(self):")
@@ -55,6 +114,8 @@ class CodeGenerator:
         self.add_line("    def espiar(self):")
         self.add_line("        return self.heap[0] if self.heap else None")
         self.add_line("    def len(self):")
+        self.add_line("        return len(self.heap)")
+        self.add_line("    def __len__(self):")
         self.add_line("        return len(self.heap)")
         self.add_line("")
 
@@ -123,11 +184,12 @@ class CodeGenerator:
         self.indent_level += 1
         if self.var_types:
             self.add_line(f"global {', '.join(self.var_types.keys())}")
+        start = self.begin_block()
         
         while not self.check_token(TokenEnum.FIMALGORITMO) and not self.check_token(TokenEnum.END_OF_FILE):
             self.gen_statement()
 
-        self.indent_level -= 1
+        self.end_block(start)
         self.add_line("")
         self.add_line("if __name__ == '__main__':")
         self.add_line("    main()")
@@ -156,6 +218,10 @@ class CodeGenerator:
                 val_inicial = "0.0"
             elif tipo == "dicionario": 
                 val_inicial = "{}"
+            elif tipo == "logico":
+                val_inicial = "False"
+            elif tipo == "lista":
+                val_inicial = "[]"
             elif tipo.lower() == "filaprioridade": 
                 val_inicial = "FilaPrioridade()"
             else:
@@ -206,11 +272,12 @@ class CodeGenerator:
 
         self.add_line(f"while {cond}:")
         self.indent_level += 1
+        start = self.begin_block()
         
         while not self.check_token(TokenEnum.FIMENQUANTO):
             self.gen_statement()
 
-        self.indent_level -= 1
+        self.end_block(start)
         self.advance() # FIMENQUANTO
 
     def gen_assignment_or_call(self):
@@ -221,18 +288,7 @@ class CodeGenerator:
             lexeme += "."
             self.advance() # PONTO
 
-            metodo = self.current_lexeme()
-            if metodo == "adicionar": metodo = "append"
-            elif metodo == "pegar": metodo = "get"
-            elif metodo == "atualizar": metodo = "update"
-            elif metodo == "adicionarInicio": metodo = "appendleft"
-            elif metodo == "adicionarFim": metodo = "append"
-            elif metodo == "removerInicio": metodo = "popleft"
-            elif metodo == "removerFim": metodo = "pop"
-            elif metodo == "expandir": metodo = "extend"
-            elif metodo == "limpar": metodo = "clear"
-            
-            lexeme += metodo
+            lexeme += self.map_identifier(self.current_lexeme(), after_dot=True)
 
             self.advance() # ID
         
@@ -262,10 +318,14 @@ class CodeGenerator:
     def gen_escreva(self):
         self.advance() # ESCREVA
         self.advance() # (
-        expr = self.gen_expression()
-        # O python print adiciona newline por padrao, portugol as vezes nao.
-        # Mas vamos manter simples: print()
-        self.add_line(f"print({expr})")
+        args = []
+        if not self.check_token(TokenEnum.PARFE):
+            args.append(self.gen_expression())
+            while self.check_token(TokenEnum.COMMA):
+                self.advance() # ,
+                args.append(self.gen_expression())
+        # Concatena sem separador (estilo VisuAlg) e mostra logicos como verdadeiro/falso
+        self.add_line(f"_escreva({', '.join(args)})")
         self.advance() # )
 
     def gen_leia(self):
@@ -280,6 +340,8 @@ class CodeGenerator:
             self.add_line(f"{var_name} = int(input())") 
         elif tipo_var in ['real', 'float']:
             self.add_line(f"{var_name} = float(input())") 
+        elif tipo_var == 'logico':
+            self.add_line(f"{var_name} = input().strip().lower() == 'verdadeiro'")
         else:
             self.add_line(f"{var_name} = _S(input())")
 
@@ -292,20 +354,22 @@ class CodeGenerator:
         
         self.add_line(f"if {cond}:")
         self.indent_level += 1
+        start = self.begin_block()
         
         # Processa bloco
         while not (self.check_token(TokenEnum.SENAO) or self.check_token(TokenEnum.FIMSE) or self.check_token(TokenEnum.FIMALGORITMO)):
             self.gen_statement()
         
-        self.indent_level -= 1
+        self.end_block(start)
         
         if self.check_token(TokenEnum.SENAO):
             self.advance() # SENAO
             self.add_line("else:")
             self.indent_level += 1
+            start = self.begin_block()
             while not (self.check_token(TokenEnum.FIMSE) or self.check_token(TokenEnum.FIMALGORITMO)):
                 self.gen_statement()
-            self.indent_level -= 1
+            self.end_block(start)
             
         self.advance() # FIMSE
 
@@ -329,12 +393,13 @@ class CodeGenerator:
         if self.check_token(TokenEnum.FACA):
             self.advance()
             
-        self.add_line(f"for {var_controle} in range({inicio_val}, {fim_val} + 1, {passo_val}):") # Range inclusivo
+        self.add_line(f"for {var_controle} in _faixa({inicio_val}, {fim_val}, {passo_val}):") # Range inclusivo
         
         self.indent_level += 1
+        start = self.begin_block()
         while not self.check_token(TokenEnum.FIMPARA):
             self.gen_statement()
-        self.indent_level -= 1
+        self.end_block(start)
         self.advance() # FIMPARA
     
     def gen_expression(self):
@@ -377,33 +442,15 @@ class CodeGenerator:
                 break
             
             # Lexeme mapping
-            if t == TokenEnum.ID.name:
-                if l == "tamanho": l = "len"
-                elif l == "verdadeiro": l = "True"
-                elif l == "falso": l = "False"
-                elif l == "adicionar": l = "append"
-                elif l == "pegar": l = "get"
-                elif l == "atualizar": l = "update"
-                elif l == "filaDupla": l = "deque"
-                elif l == "filaPrioridade": l = "FilaPrioridade"
-                elif l == "adicionarInicio": l = "appendleft"
-                elif l == "adicionarFim": l = "append"
-                elif l == "removerInicio": l = "popleft"
-                elif l == "removerFim": l = "pop"
-                elif l == "expandir": l = "extend"
-                elif l == "limpar": l = "clear"
-                elif l == "raiz": l = "math.sqrt"
-                elif l == "potencia": l = "math.pow"
-                elif l == "seno": l = "math.sin"
-                elif l == "cosseno": l = "math.cos"
-                elif l == "tangente": l = "math.tan"
-                elif l == "teto": l = "math.ceil"
-                elif l == "piso": l = "math.floor"
-                elif l == "pi": l = "math.pi"
-                elif l == "absoluto": l = "abs"
+            if t == TokenEnum.ID.name and last_token_type == TokenEnum.NOVO.name and l == "lista":
+                l = "list"
+            elif t == TokenEnum.ID.name:
+                l = self.map_identifier(l, after_dot=(last_token_type == TokenEnum.PONTO.name))
             elif t == TokenEnum.TIPO.name:
                 if l.lower() == "filaprioridade": l = "FilaPrioridade"
+                elif l == "dicionario": l = "dict"
             elif t == TokenEnum.LOGIGUAL.name: l = "=="
+            elif t == TokenEnum.OPMOD.name: l = "%"
             elif t == TokenEnum.LOGDIFF.name: l = "!="
             elif t == TokenEnum.LOGMENOR.name: l = "<"
             elif t == TokenEnum.LOGMAIOR.name: l = ">"
@@ -419,14 +466,17 @@ class CodeGenerator:
             elif t == TokenEnum.CHAVEA.name: l = "{"
             elif t == TokenEnum.CHAVEF.name: l = "}"
             elif t == TokenEnum.COLON.name: l = ": "
-            elif t == TokenEnum.ATR.name: break 
+            elif t == TokenEnum.ATR.name:
+                if l != '=': break # '<-' nunca faz parte de uma expressao
+                l = "=="
+                t = TokenEnum.LOGIGUAL.name
             elif t == TokenEnum.NOVO.name: l = "" 
             elif t == TokenEnum.STRING.name: l = f"_S({l})"
             
             # Valid tokens
             valid_expr_tokens = [
                 TokenEnum.ID.name, TokenEnum.NUMINT.name, TokenEnum.STRING.name, TokenEnum.TIPO.name,
-                TokenEnum.OPMAIS.name, TokenEnum.OPMENOS.name, TokenEnum.OPMULTI.name, TokenEnum.OPDIVI.name,
+                TokenEnum.OPMAIS.name, TokenEnum.OPMENOS.name, TokenEnum.OPMULTI.name, TokenEnum.OPDIVI.name, TokenEnum.OPMOD.name,
                 TokenEnum.PARAB.name, TokenEnum.PARFE.name,
                 TokenEnum.COLCHETEA.name, TokenEnum.COLCHETEF.name, TokenEnum.COMMA.name, 
                 TokenEnum.LOGIGUAL.name, TokenEnum.LOGDIFF.name, TokenEnum.LOGMENOR.name, TokenEnum.LOGMAIOR.name,
@@ -488,11 +538,12 @@ class CodeGenerator:
             global_vars = [v for v in self.var_types.keys() if v not in params]
             if global_vars:
                 self.add_line(f"global {', '.join(global_vars)}")
+        start = self.begin_block()
         
         while not self.check_token(TokenEnum.FIMFUNCAO):
             self.gen_statement()
             
-        self.indent_level -= 1
+        self.end_block(start)
         self.advance() # FIMFUNCAO
         self.add_line("") # Pula uma linha para deixar o Python bonito e legível
 
@@ -550,15 +601,11 @@ class CodeGenerator:
             global_vars = [v for v in self.var_types.keys() if v not in params]
             if global_vars:
                 self.add_line(f"global {', '.join(global_vars)}")
+        start = self.begin_block()
         
-        has_content = False
         while not self.check_token(TokenEnum.FIMFUNCAO):
-            has_content = True
             self.gen_statement()
             
-        if not has_content:
-            self.add_line("pass")
-            
-        self.indent_level -= 1
+        self.end_block(start)
         self.advance() # FIMFUNCAO
         self.add_line("")
