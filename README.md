@@ -59,7 +59,11 @@ pip install -e .
 Isto instalará dois comandos no seu terminal:
 
 * `meupia`: O compilador.
-* `mpm`: O gerenciador de pacotes.
+* `mpgp`: O gerenciador de pacotes.
+
+## 📚 Guia da Linguagem
+
+A sintaxe completa do meuPiá, com exemplos testados automaticamente, está no [Guia da Linguagem](docs/guia-da-linguagem.md).
 
 ## 📦 mPGP – Gerenciador de Pacotes
 
@@ -68,15 +72,11 @@ O **mPGP** (meuPiá Package Manager) facilita a instalação de módulos adicion
 ### Comandos Básicos
 
 ```bash
-# Listar plugins disponíveis
-mpgp liste
+# Listar plugins disponíveis (e quais já estão instalados)
+mpgp list
 
 # Instalar um plugin
 mpgp instale <nome_do_plugin>
-
-# Remover um plugin
-mpgp remover <nome_do_plugin>
-
 ```
 
 ### Módulos Oficiais Disponíveis
@@ -101,7 +101,7 @@ meupia input/ola_mundo.por
 
 ### 2. Usando Plugins (Ex: IoT/Maker)
 
-Após instalar o módulo maker (`mpm install maker`), você pode utilizá-lo no seu código:
+Após instalar o módulo maker (`mpgp instale maker`), você pode utilizá-lo no seu código:
 
 ```portugol
 algoritmo "PiscaLed"
@@ -117,8 +117,8 @@ inicio
         iot_esperar(1000)
         iot_desligar(led)
         iot_esperar(1000)
-    fimenquanto
-fimalgoritmo
+    fim_enquanto
+fim_algoritmo
 
 ```
 
