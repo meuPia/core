@@ -1,6 +1,6 @@
 from typing import Dict, List, Tuple
 
-from ..utils.builtins import TIPOS_CONTEXTUAIS
+from ..utils.builtins import TIPOS_CONTEXTUAIS, TIPOS_ELEMENTO
 from ..utils.erros import ErroCompilacao, descrever_token, posicao
 from ..utils.token_enum import TokenEnum
 
@@ -12,6 +12,7 @@ class Parser:
     self.lexeme_pairs = lexemePairs
     self.pos = 0
     self.profundidade_bloco = 0 # > 0 dentro de se/senao/enquanto/para
+    self.atribuicoes = [] # (alvo, inicio, fim) de cada 'nome <- expressao' com alvo sem '.' nem '[...]'
 
   def current_token(self) -> str:
     if self.pos < len(self.lexeme_pairs):
@@ -135,6 +136,33 @@ class Parser:
     linhas = parser.grammar_local_declaration()
     return linhas, parser.pos
 
+  @staticmethod
+  def ler_bloco_var(lexeme_pairs: List[Dict[str, str]], pos: int) -> Tuple[List[dict], int]:
+    """Le o bloco 'var' global que comeca em 'pos'; retorna as linhas e a posicao logo depois do bloco."""
+    parser = Parser(lexeme_pairs)
+    parser.pos = pos
+    linhas = parser.grammar_variable_block()
+    return linhas, parser.pos
+
+  @staticmethod
+  def usa_colecoes_tipadas(lexeme_pairs: List[Dict[str, str]]) -> bool:
+    """Indica se alguma declaracao usa 'vetor[' ou 'lista de' na posicao de tipo."""
+    for i in range(1, len(lexeme_pairs) - 1):
+      if lexeme_pairs[i - 1]['token'] != TokenEnum.COLON.name or lexeme_pairs[i]['token'] != TokenEnum.ID.name:
+        continue
+      seguinte = lexeme_pairs[i + 1]['token']
+      if (lexeme_pairs[i]['lexeme'] == 'vetor' and seguinte == TokenEnum.COLCHETEA.name) or \
+         (lexeme_pairs[i]['lexeme'] == 'lista' and seguinte == TokenEnum.DE.name):
+        return True
+    return False
+
+  @staticmethod
+  def ler_atribuicoes(lexeme_pairs: List[Dict[str, str]]) -> List[Tuple[int, int, int]]:
+    """Retorna (alvo, inicio, fim) de cada comando 'nome <- expressao' do programa, com a expressao em [inicio, fim)."""
+    parser = Parser(lexeme_pairs)
+    parser.parse()
+    return parser.atribuicoes
+
   def grammar_local_declaration(self) -> List[dict]:
     self.expect_token(TokenEnum.VAR)
     linhas = [self.grammar_declaration_line(permite_valor=True)]
@@ -143,8 +171,9 @@ class Parser:
     return linhas
 
   def grammar_id_statement(self):
+    alvo = self.pos
     self.expect_token(TokenEnum.ID)
-    
+
     while self.check_token(TokenEnum.PONTO):
       self.expect_token(TokenEnum.PONTO)
       self.expect_token(TokenEnum.ID)
@@ -155,9 +184,13 @@ class Parser:
       self.expect_token(TokenEnum.COLCHETEF)
       
     if self.check_token(TokenEnum.ATR):
+      nome_simples = self.pos == alvo + 1
       self.expect_token(TokenEnum.ATR)
+      inicio = self.pos
       self.grammar_expression()
-      
+      if nome_simples:
+        self.atribuicoes.append((alvo, inicio, self.pos))
+
     elif self.check_token(TokenEnum.PARAB):
       self.expect_token(TokenEnum.PARAB)
       if not self.check_token(TokenEnum.PARFE):
@@ -173,11 +206,13 @@ class Parser:
   # Gramáticas
   # ----------------
 
-  def grammar_variable_block(self):
+  def grammar_variable_block(self) -> List[dict]:
     self.expect_token(TokenEnum.VAR)
 
+    linhas = []
     while self.check_token(TokenEnum.ID):
-      self.grammar_declaration_line(permite_valor=False)
+      linhas.append(self.grammar_declaration_line(permite_valor=False))
+    return linhas
 
   def grammar_declaration_line(self, permite_valor: bool) -> dict:
     # nome1, nome2: tipo [<- expressao]  (valor so com um nome e so em declaracoes locais)
@@ -190,13 +225,8 @@ class Parser:
       self.expect_token(TokenEnum.ID)
 
     self.expect_token(TokenEnum.COLON)
-    tipo = self.current_lexeme()
-    if self.check_token(TokenEnum.ID) and self.current_lexeme() in TIPOS_CONTEXTUAIS:
-      self.expect_token(TokenEnum.ID)
-    else:
-      self.expect_token(TokenEnum.TIPO)
-
-    linha = {'nomes': nomes, 'tipo': tipo, 'expressao': None}
+    linha = {'nomes': nomes, 'expressao': None}
+    linha.update(self.grammar_tipo())
     if permite_valor and self.check_token(TokenEnum.ATR):
       if len(nomes) > 1:
         raise self.erro('só é possível dar um valor inicial quando a linha declara uma única variável')
@@ -205,6 +235,38 @@ class Parser:
       self.grammar_expression()
       linha['expressao'] = (inicio, self.pos)
     return linha
+
+  def grammar_tipo(self) -> dict:
+    # tipo simples | lista de T | vetor[N] de T
+    tipo = self.current_lexeme()
+    descricao = {'tipo': tipo, 'elemento': None, 'tamanho': None}
+    if self.check_token(TokenEnum.ID) and tipo == 'vetor':
+      self.expect_token(TokenEnum.ID)
+      self.expect_token(TokenEnum.COLCHETEA)
+      tamanho = self.current_lexeme()
+      if not (self.check_token(TokenEnum.NUMINT) and tamanho.isdigit() and int(tamanho) > 0):
+        raise self.erro('o tamanho do vetor precisa ser um número inteiro maior que zero, como vetor[5] de inteiro')
+      self.expect_token(TokenEnum.NUMINT)
+      self.expect_token(TokenEnum.COLCHETEF)
+      self.expect_token(TokenEnum.DE)
+      descricao['tamanho'] = int(tamanho)
+      descricao['elemento'] = self.grammar_tipo_elemento()
+    elif self.check_token(TokenEnum.ID) and tipo == 'lista' and self.peek_next_token() == TokenEnum.DE.name:
+      self.expect_token(TokenEnum.ID)
+      self.expect_token(TokenEnum.DE)
+      descricao['elemento'] = self.grammar_tipo_elemento()
+    elif self.check_token(TokenEnum.ID) and tipo in TIPOS_CONTEXTUAIS:
+      self.expect_token(TokenEnum.ID)
+    else:
+      self.expect_token(TokenEnum.TIPO)
+    return descricao
+
+  def grammar_tipo_elemento(self) -> str:
+    elemento = self.current_lexeme()
+    if not (self.check_token_any([TokenEnum.TIPO, TokenEnum.ID]) and elemento.lower() in TIPOS_ELEMENTO):
+      raise self.erro('o tipo dos elementos precisa ser inteiro, real, float, cadeia, string ou logico')
+    self.pos += 1
+    return elemento
 
   def grammar_command_escreva(self):
     self.expect_token(TokenEnum.ESCREVA)

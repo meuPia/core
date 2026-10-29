@@ -3,6 +3,86 @@ from ..utils.builtins import CONSTANTES_BUILTIN, FUNCOES_BUILTIN, METODOS, TIPOS
 from ..utils.token_enum import TokenEnum
 from .syntax_analyzer import Parser
 
+# Runtime de 'vetor[N] de T' e 'lista de T', emitido so quando o programa declara uma colecao tipada
+RUNTIME_COLECOES_TIPADAS = '''\
+def _valor_msg(valor):
+    if valor is True: return 'verdadeiro'
+    if valor is False: return 'falso'
+    if isinstance(valor, str): return '"' + str(valor) + '"'
+    return str(valor)
+def _elemento(tipo, valor, nome):
+    # Verifica e normaliza um valor que vai entrar numa colecao tipada
+    t = tipo.lower()
+    if t == 'inteiro' and isinstance(valor, int) and not isinstance(valor, bool): return valor
+    if t in ('real', 'float') and isinstance(valor, (int, float)) and not isinstance(valor, bool): return float(valor)
+    if t in ('cadeia', 'string') and isinstance(valor, str): return _S(valor)
+    if t == 'logico' and isinstance(valor, bool): return valor
+    raise TypeError(nome + ' só aceita valores do tipo ' + tipo + '; recebeu ' + _valor_msg(valor))
+_INICIAL = {'inteiro': 0, 'real': 0.0, 'float': 0.0, 'cadeia': '', 'string': '', 'logico': False}
+def _eh_inteiro(valor):
+    return isinstance(valor, int) and not isinstance(valor, bool)
+class _Lista(list):
+    _nome = 'a lista'
+    _fora = 'da lista'
+    def __init__(self, tipo, valores=()):
+        self.tipo = tipo
+        list.__init__(self, [_elemento(tipo, v, self._nome) for v in valores])
+    @classmethod
+    def receber(cls, tipo, valor):
+        if type(valor) is cls and valor.tipo == tipo: return valor
+        if not isinstance(valor, (list, deque)):
+            raise TypeError(cls._nome + ' só recebe uma lista de valores; recebeu ' + _valor_msg(valor))
+        return cls(tipo, valor)
+    def _indice(self, i):
+        n = len(self)
+        if _eh_inteiro(i) and 0 <= i < n: return i
+        if n == 0: raise IndexError('índice ' + _valor_msg(i) + ' fora ' + self._fora + ' vazia')
+        raise IndexError('índice ' + _valor_msg(i) + ' fora ' + self._fora + ' de tamanho ' + str(n) + ' (use de 0 a ' + str(n - 1) + ')')
+    def __getitem__(self, i): return list.__getitem__(self, self._indice(i))
+    def __setitem__(self, i, valor): list.__setitem__(self, self._indice(i), _elemento(self.tipo, valor, self._nome))
+    def append(self, valor): list.append(self, _elemento(self.tipo, valor, self._nome))
+    def extend(self, valores): list.extend(self, [_elemento(self.tipo, v, self._nome) for v in valores])
+    def __iadd__(self, valores):
+        self.extend(valores)
+        return self
+    def inserir(self, posicao, valor):
+        n = len(self)
+        if not (_eh_inteiro(posicao) and 0 <= posicao <= n):
+            raise IndexError('posição ' + _valor_msg(posicao) + ' fora da lista de tamanho ' + str(n) + ' (use de 0 a ' + str(n) + ')')
+        list.insert(self, posicao, _elemento(self.tipo, valor, self._nome))
+    def insert(self, posicao, valor): self.inserir(posicao, valor)
+    def pop(self, *posicao):
+        if posicao: return self.removerEm(posicao[0])
+        if not self: raise ValueError('a lista está vazia')
+        return list.pop(self)
+    def removerEm(self, posicao): return list.pop(self, self._indice(posicao))
+    def remover(self, valor):
+        if valor not in self: raise ValueError('o valor ' + _valor_msg(valor) + ' não está na lista')
+        list.remove(self, valor)
+    def remove(self, valor): self.remover(valor)
+    def buscar(self, valor): return list.index(self, valor) if valor in self else -1
+    def contem(self, valor): return valor in self
+    def ordenar(self): list.sort(self)
+    def sort(self, *args, **kwargs): self.ordenar()
+class _Vetor(_Lista):
+    _nome = 'o vetor'
+    _fora = 'do vetor'
+    def __init__(self, tipo, n, valores=None):
+        if valores is None: valores = [_INICIAL[tipo.lower()]] * n
+        elif len(valores) != n: raise ValueError('o vetor tem ' + str(n) + ' posições, mas recebeu ' + str(len(valores)) + ' elementos')
+        self.n = n
+        _Lista.__init__(self, tipo, valores)
+    @classmethod
+    def receber(cls, tipo, n, valor):
+        if type(valor) is cls and valor.tipo == tipo and valor.n == n: return valor
+        if not isinstance(valor, (list, deque)):
+            raise TypeError(cls._nome + ' só recebe uma lista de valores; recebeu ' + _valor_msg(valor))
+        return cls(tipo, n, list(valor))
+    def _fixo(self, *args, **kwargs):
+        raise ValueError('o vetor tem tamanho fixo e não aceita adicionar nem remover elementos')
+    append = extend = __iadd__ = inserir = insert = pop = removerEm = remover = remove = _fixo
+    clear = appendleft = popleft = __delitem__ = _fixo'''
+
 class CodeGenerator:
     def __init__(self, lexemePairs: List[Dict[str, str]]):
         self.lexeme_pairs = lexemePairs
@@ -11,6 +91,7 @@ class CodeGenerator:
         self.indent_level = 0
         self.var_types = {}
         self.local_types = {} # tipos das variaveis locais do def atual (funcao, metodo ou main)
+        self.params_atuais = set() # parametros do def atual: sem tipo, escondem globais de mesmo nome
         self.user_names = self.collect_user_names()
 
     def add_line(self, line):
@@ -128,6 +209,9 @@ class CodeGenerator:
         self.add_line("        return len(self.heap)")
         self.add_line("    def __len__(self):")
         self.add_line("        return len(self.heap)")
+        if Parser.usa_colecoes_tipadas(self.lexeme_pairs):
+            for linha in RUNTIME_COLECOES_TIPADAS.split('\n'):
+                self.add_line(linha)
         self.add_line("")
 
         self.imports = []
@@ -193,6 +277,7 @@ class CodeGenerator:
         
         self.add_line("def main():")
         self.local_types = {}
+        self.params_atuais = set()
         self.indent_level += 1
         if self.var_types:
             self.add_line(f"global {', '.join(self.var_types.keys())}")
@@ -209,28 +294,36 @@ class CodeGenerator:
         return "\n".join(self.python_code)
 
     def gen_variables(self):
-        self.advance() # VAR
-        while self.check_token(TokenEnum.ID):
-            ids = []
-            ids.append(self.current_lexeme())
-            self.advance()
-            
-            while self.check_token(TokenEnum.COMMA):
-                self.advance() # ,
-                ids.append(self.current_lexeme())
-                self.advance() # ID
-                
-            self.advance() # :
-            tipo = self.current_lexeme()
-            self.advance() # TIPO
-            
-            for var_name in ids:
-                self.var_types[var_name] = tipo
-                self.add_line(f"{var_name} = {self.valor_inicial(tipo)}")
+        linhas, self.pos = Parser.ler_bloco_var(self.lexeme_pairs, self.pos)
+        for linha in linhas:
+            for var_name, _ in linha['nomes']:
+                self.var_types[var_name] = linha
+                self.add_line(f"{var_name} = {self.valor_inicial(linha)}")
 
-    def valor_inicial(self, tipo: str) -> str:
+    def tipo_de(self, nome: str):
+        # Linha de declaracao do nome visivel no def atual: local, depois parametro (sem tipo), depois global
+        if nome in self.local_types:
+            return self.local_types[nome]
+        if nome in self.params_atuais:
+            return None
+        return self.var_types.get(nome)
+
+    def converter(self, linha, expr: str) -> str:
+        # Atribuicao a colecao tipada passa pela verificacao do runtime
+        if not linha or not linha['elemento']:
+            return expr
+        if linha['tipo'] == 'vetor':
+            return f"_Vetor.receber({linha['elemento']!r}, {linha['tamanho']}, {expr})"
+        return f"_Lista.receber({linha['elemento']!r}, {expr})"
+
+    def valor_inicial(self, linha: dict) -> str:
         # Valor com que toda variavel declarada (global ou local) comeca
-        if tipo == "inteiro":
+        tipo = linha['tipo']
+        if linha['elemento'] and tipo == "vetor":
+            return f"_Vetor({linha['elemento']!r}, {linha['tamanho']})"
+        elif linha['elemento']:
+            return f"_Lista({linha['elemento']!r})"
+        elif tipo == "inteiro":
             return "0"
         elif tipo == "real" or tipo == "float":
             return "0.0"
@@ -286,11 +379,11 @@ class CodeGenerator:
         for linha in linhas:
             if linha['expressao']:
                 self.pos, fim_expr = linha['expressao']
-                valor = self.gen_expression(fim=fim_expr)
+                valor = self.converter(linha, self.gen_expression(fim=fim_expr))
             else:
-                valor = self.valor_inicial(linha['tipo'])
+                valor = self.valor_inicial(linha)
             for nome, _ in linha['nomes']:
-                self.local_types[nome] = linha['tipo']
+                self.local_types[nome] = linha
                 self.add_line(f"{nome} = {valor}")
         self.pos = fim
 
@@ -331,8 +424,11 @@ class CodeGenerator:
             self.advance() # Consome ']' (o gen_expression para antes dele)
         
         if self.check_token(TokenEnum.ATR):
+            nome_simples = self.lexeme_pairs[self.pos - 1]['lexeme'] == lexeme
             self.advance() # <-
             expr = self.gen_expression()
+            if nome_simples:
+                expr = self.converter(self.tipo_de(lexeme), expr)
             self.add_line(f"{lexeme} = {expr}")
             
         elif self.check_token(TokenEnum.PARAB):
@@ -365,7 +461,8 @@ class CodeGenerator:
         var_name = self.current_lexeme()
         self.advance() # ID
         
-        tipo_var = self.local_types.get(var_name, self.var_types.get(var_name))
+        linha = self.local_types.get(var_name, self.var_types.get(var_name))
+        tipo_var = linha['tipo'] if linha else None
         
         if tipo_var == 'inteiro':
             self.add_line(f"{var_name} = int(input())") 
@@ -567,6 +664,7 @@ class CodeGenerator:
         self.advance() # )
         
         self.add_line(f"def {func_name}({', '.join(params)}):")
+        self.params_atuais = set(params)
         self.indent_level += 1 
         if self.var_types:
             global_vars = [v for v in self.var_types.keys() if v not in params]
@@ -631,6 +729,7 @@ class CodeGenerator:
             func_name = "__init__"
             
         self.add_line(f"def {func_name}({', '.join(params)}):")
+        self.params_atuais = set(params)
         self.indent_level += 1 
         if self.var_types:
             global_vars = [v for v in self.var_types.keys() if v not in params]

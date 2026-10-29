@@ -45,6 +45,20 @@ def test_variavel_chamada_logico():
     assert executar(programa('logico <- 1\nescreva(logico + 1)', var='logico: inteiro')) == '2'
 
 
+def test_variavel_chamada_vetor():
+    codigo = programa('vetor.adicionar(1)\nescreva(tamanho(vetor))', var='vetor: lista')
+    assert executar(codigo) == '1'
+
+
+def test_variavel_chamada_vetor_com_tipo_vetor():
+    codigo = programa('vetor[1] <- 4\nescreva(vetor[1])', var='vetor: vetor[2] de inteiro')
+    assert executar(codigo) == '4'
+
+
+def test_valor_inicial_de_vetor():
+    assert executar(programa('escreva(v)', var='v: vetor[2] de real')) == '[0.0, 0.0]'
+
+
 # --- Leitura de logico ---
 
 def test_leitura_de_verdadeiro():

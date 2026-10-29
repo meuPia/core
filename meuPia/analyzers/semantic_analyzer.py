@@ -16,6 +16,10 @@ class SemanticAnalyzer:
     self.params = set()
     self.locais_visiveis = set()
     self.declaradas_no_corpo = {}
+    self.usa_tipadas = Parser.usa_colecoes_tipadas(lexemePairs)
+    self.tipos_globais = {} # nome -> linha de declaracao das globais 'vetor' e 'lista de T'
+    self.tipos_locais = {} # o mesmo para as locais do corpo atual
+    self.atribuicoes = {} # posicao do alvo -> intervalo da expressao de 'nome <- expressao'
     self.pos = 0
 
   def current_token(self) -> str:
@@ -47,6 +51,8 @@ class SemanticAnalyzer:
 
   def validate(self):
     self.get_declared_variables()
+    if self.usa_tipadas:
+      self.atribuicoes = {alvo: (inicio, fim) for alvo, inicio, fim in Parser.ler_atribuicoes(self.lexeme_pairs)}
     self.validate_variable_usage()
 
   # ----------------
@@ -60,6 +66,11 @@ class SemanticAnalyzer:
     while self.pos < len(self.lexeme_pairs):
       if self.check_token(TokenEnum.VAR) and not in_body:
         in_var_block = True
+        if self.usa_tipadas:
+          linhas, _ = Parser.ler_bloco_var(self.lexeme_pairs, self.pos)
+          for linha in linhas:
+            if linha['elemento']:
+              self.tipos_globais.update((nome, linha) for nome, _ in linha['nomes'])
 
       elif self.check_token_any([TokenEnum.FUNCAO, TokenEnum.CLASSE, TokenEnum.METODO]):
         # Qualquer declaracao encerra o bloco var
@@ -120,7 +131,14 @@ class SemanticAnalyzer:
         self.validate_local_declaration()
         continue # validate_local_declaration ja posiciona depois da declaracao
 
+      elif in_code_block and self.check_token(TokenEnum.LEIA):
+        self.validate_leia()
+
       elif in_code_block and self.check_token(TokenEnum.ID):
+        if self.pos in self.atribuicoes:
+          linha = self.tipo_de(self.current_lexeme())
+          if linha:
+            self.validate_lista_literal(self.current_lexeme(), linha, *self.atribuicoes[self.pos])
         self.validate_identifier()
 
       self.advance()
@@ -129,6 +147,7 @@ class SemanticAnalyzer:
     # Novo corpo (funcao, metodo ou inicio): so os parametros sao visiveis no comeco
     self.params = params
     self.locais_visiveis = set(params)
+    self.tipos_locais = {}
     self.declaradas_no_corpo = self.scan_body_declarations(self.pos)
 
   def scan_body_declarations(self, inicio: int) -> dict:
@@ -163,8 +182,12 @@ class SemanticAnalyzer:
           self.pos = indice
           if self.check_token(TokenEnum.ID):
             self.validate_identifier()
+        if linha['elemento']:
+          self.validate_lista_literal(linha['nomes'][0][0], linha, inicio_expr, fim_expr)
 
       self.locais_visiveis |= nomes_da_linha
+      if linha['elemento']:
+        self.tipos_locais.update((nome, linha) for nome in nomes_da_linha)
 
     self.pos = fim
 
@@ -188,6 +211,63 @@ class SemanticAnalyzer:
     if lexeme in self.declaradas_no_corpo:
       raise self.erro(f'a variável "{lexeme}" foi usada antes de ser declarada')
     raise self.erro(f'a variável "{lexeme}" não foi declarada no bloco var')
+
+  def tipo_de(self, nome: str):
+    # Linha de declaracao da colecao tipada visivel com esse nome, ou None
+    if nome in self.tipos_locais:
+      return self.tipos_locais[nome]
+    if nome in self.locais_visiveis:
+      return None # local sem tipo de colecao ou parametro
+    return self.tipos_globais.get(nome)
+
+  def validate_leia(self):
+    # leia ( nome )
+    pos_nome = self.pos + 2
+    if self.token_at(pos_nome) != TokenEnum.ID.name:
+      return
+    nome = self.lexeme_pairs[pos_nome]['lexeme']
+    if self.tipo_de(nome):
+      raise self.erro_em(f'leia não lê uma coleção inteira; leia um valor numa variável e guarde com {nome}[i] <- valor', pos_nome)
+
+  def tipo_do_literal(self, inicio: int, fim: int) -> str:
+    # Tipo de um elemento de lista literal formado so por um literal simples, ou '' se nao for
+    tokens = [self.token_at(i) for i in range(inicio, fim)]
+    if tokens and tokens[0] == TokenEnum.OPMENOS.name:
+      tokens = tokens[1:]
+      inicio += 1
+    if tokens == [TokenEnum.NUMINT.name]:
+      return 'real' if '.' in self.lexeme_pairs[inicio]['lexeme'] else 'inteiro'
+    if tokens == [TokenEnum.STRING.name] and fim - inicio == 1:
+      return 'cadeia'
+    if tokens == [TokenEnum.ID.name] and fim - inicio == 1:
+      lexeme = self.lexeme_pairs[inicio]['lexeme']
+      declarado = self.is_variable_declared(lexeme) or lexeme in self.locais_visiveis or lexeme in self.callable_names
+      if lexeme in ('verdadeiro', 'falso') and not declarado:
+        return 'logico'
+    return ''
+
+  def validate_lista_literal(self, nome: str, linha: dict, inicio: int, fim: int):
+    # So listas literais de literais simples: o resto fica para a verificacao na execucao
+    if self.token_at(inicio) != TokenEnum.COLCHETEA.name or self.token_at(fim - 1) != TokenEnum.COLCHETEF.name:
+      return
+    elementos = []
+    comeco = inicio + 1
+    for i in range(inicio + 1, fim):
+      if i == fim - 1 or self.token_at(i) == TokenEnum.COMMA.name:
+        if i > comeco or self.token_at(i) == TokenEnum.COMMA.name:
+          tipo = self.tipo_do_literal(comeco, i)
+          if not tipo:
+            return
+          elementos.append((tipo, comeco))
+        comeco = i + 1
+
+    if linha['tipo'] == 'vetor' and len(elementos) != linha['tamanho']:
+      raise self.erro_em(f'o vetor "{nome}" tem {linha["tamanho"]} posições, mas a lista tem {len(elementos)} elementos', inicio)
+
+    esperado = {'float': 'real', 'string': 'cadeia'}.get(linha['elemento'].lower(), linha['elemento'].lower())
+    for tipo, posicao_elemento in elementos:
+      if tipo != esperado and not (esperado == 'real' and tipo == 'inteiro'):
+        raise self.erro_em(f'"{nome}" só aceita valores do tipo {linha["elemento"]}; este valor é do tipo {tipo}', posicao_elemento)
 
   def erro_em(self, descricao: str, pos: int) -> SemanticError:
     linha, coluna = posicao(self.lexeme_pairs, pos)

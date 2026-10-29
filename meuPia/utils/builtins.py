@@ -1,5 +1,8 @@
 # Nomes que so funcionam como tipo na posicao de tipo do 'var' e logo depois de 'novo'
-TIPOS_CONTEXTUAIS = ('lista', 'logico')
+TIPOS_CONTEXTUAIS = ('lista', 'logico', 'vetor')
+
+# Tipos aceitos como elemento de 'vetor[N] de T' e 'lista de T'
+TIPOS_ELEMENTO = ('inteiro', 'real', 'float', 'cadeia', 'string', 'logico')
 
 # Funcoes nativas: nome no Portugol -> nome no Python
 FUNCOES_BUILTIN = {

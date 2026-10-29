@@ -95,6 +95,8 @@ Uma variável é um nome que guarda um valor. As variáveis do programa são dec
 | `string` ou `cadeia` | textos | texto vazio |
 | `logico` | `verdadeiro` ou `falso` | `falso` |
 | `lista` | sequência de valores | lista vazia |
+| `lista de T` | sequência de valores do tipo `T` | lista vazia |
+| `vetor[N] de T` | exatamente `N` valores do tipo `T` | `N` cópias do valor inicial de `T` |
 | `dicionario` | pares chave → valor | dicionário vazio |
 | `filaPrioridade` | fila que sempre entrega o menor valor | fila vazia |
 
@@ -159,7 +161,7 @@ fim_algoritmo
 Mestre Yoda
 ```
 
-`lista` e `logico` só são tipos depois do `:` de uma declaração (e depois de `novo`, seção 6). Em qualquer outro lugar são nomes comuns, então você pode ter uma variável chamada `lista` ou `logico`:
+`lista`, `logico` e `vetor` só são tipos depois do `:` de uma declaração (e `lista` também depois de `novo`, seção 6). Em qualquer outro lugar são nomes comuns, então você pode ter uma variável chamada `lista` ou `logico`:
 
 ```portugol
 algoritmo "NomesLivres"
@@ -875,6 +877,109 @@ fim_algoritmo
 0
 ```
 
+### Vetores
+
+Um vetor guarda **exatamente** `N` valores do mesmo tipo. Declare com `vetor[N] de T`, onde `N` é um número inteiro maior que zero e `T` é `inteiro`, `real`, `cadeia` ou `logico` (ou os sinônimos `float` e `string`). Ele já começa com `N` posições preenchidas com o valor inicial de `T`, e as posições vão de `0` a `N - 1`.
+
+```portugol
+algoritmo "Notas"
+
+var
+    notas: vetor[5] de inteiro
+    i, soma: inteiro
+
+inicio
+    escreva(notas)
+    notas <- [8, 7, 9, 10, 6]
+    notas[1] <- 5
+    para i de 0 ate tamanho(notas) - 1 faca
+        soma <- soma + notas[i]
+    fim_para
+    escreva("soma: ", soma)
+    escreva("primeira: ", notas[0])
+    notas.ordenar()
+    escreva(notas)
+    escreva("tem 10? ", notas.contem(10), ", na posição ", notas.buscar(10))
+fim_algoritmo
+```
+
+```text
+[0, 0, 0, 0, 0]
+soma: 38
+primeira: 8
+[5, 6, 8, 9, 10]
+tem 10? verdadeiro, na posição 4
+```
+
+O tamanho do vetor nunca muda:
+
+- `adicionar`, `removerFim`, `expandir`, `limpar` e os outros métodos que mudam o tamanho param o programa com `o vetor tem tamanho fixo e não aceita adicionar nem remover elementos`;
+- para trocar o vetor inteiro, atribua uma lista com o **mesmo número** de elementos. `notas <- [8, 7]` num `vetor[5]` é erro;
+- acessar `notas[5]` (ou um índice negativo) para o programa com `índice 5 fora do vetor de tamanho 5 (use de 0 a 4)`.
+
+### Listas com tipo
+
+`lista de T` é uma lista que cresce e diminui como a `lista`, mas só aceita valores do tipo `T`. Além dos métodos da lista, ela tem `inserir`, `remover`, `removerEm`, `buscar`, `contem` e `ordenar`:
+
+```portugol
+algoritmo "Chamada"
+
+var
+    nomes: lista de cadeia
+
+inicio
+    nomes.adicionar("Bruno")
+    nomes.adicionar("Ana")
+    nomes.inserir(1, "Carla")
+    escreva(nomes)
+    nomes.remover("Bruno")
+    escreva(nomes.tamanho(), " alunos")
+    nomes.ordenar()
+    escreva(nomes[0], " é a primeira")
+    escreva("Carla está na posição ", nomes.buscar("Carla"))
+    escreva("saiu: ", nomes.removerEm(0))
+    escreva("tem Ana? ", nomes.contem("Ana"))
+fim_algoritmo
+```
+
+```text
+['Bruno', 'Carla', 'Ana']
+2 alunos
+Ana é a primeira
+Carla está na posição 1
+saiu: Ana
+tem Ana? falso
+```
+
+O tipo é conferido sempre que um valor entra na coleção: ao atribuir, ao usar `v[i] <- ...`, `adicionar`, `inserir` ou `expandir`, mesmo dentro de uma função que recebeu a coleção como parâmetro. Um valor de outro tipo para o programa com uma mensagem como `a lista só aceita valores do tipo inteiro; recebeu "Ana"`. Uma coleção de `real` aceita inteiros e os guarda como real:
+
+```portugol
+algoritmo "Medidas"
+
+var
+    medidas: lista de real
+    contagens: lista de inteiro
+
+inicio
+    medidas.adicionar(2)
+    medidas.adicionar(3.5)
+    escreva(medidas)
+    contagens.adicionar(piso(7 / 2))
+    escreva(contagens)
+fim_algoritmo
+```
+
+```text
+[2.0, 3.5]
+[3]
+```
+
+> A divisão com `/` sempre dá real, mesmo quando a conta é exata: `4 / 2` é `2.0`. Por isso `contagens.adicionar(4 / 2)` numa `lista de inteiro` é erro. Use `piso(...)` ou `teto(...)` para guardar o resultado como inteiro.
+
+Quando você atribui uma lista escrita direto no código, o compilador já confere os valores antes de rodar (veja a seção 11). Atribuir uma coleção com **o mesmo tipo** faz as duas variáveis apontarem para a mesma coleção, como na `lista`. De qualquer outra lista, os valores são copiados e conferidos.
+
+A `lista` sem `de T` continua aceitando valores de qualquer tipo, mas não tem os métodos novos.
+
 ### Dicionários
 
 Um dicionário guarda pares **chave: valor**. Crie com chaves, `{"chave": valor}`, e acesse com colchetes, `d["chave"]`.
@@ -1009,16 +1114,22 @@ Os métodos são chamados com ponto, `colecao.metodo(...)`, e funcionam tanto co
 
 | Método | Onde | O que faz |
 |---|---|---|
-| `adicionar(v)` | lista, fila dupla | coloca `v` no fim |
-| `adicionarFim(v)` | lista, fila dupla | coloca `v` no fim |
+| `adicionar(v)` | lista, lista com tipo, fila dupla | coloca `v` no fim |
+| `adicionarFim(v)` | lista, lista com tipo, fila dupla | coloca `v` no fim |
 | `adicionarInicio(v)` | fila dupla | coloca `v` no início |
-| `removerFim()` | lista, fila dupla | tira e devolve o último elemento |
+| `removerFim()` | lista, lista com tipo, fila dupla | tira e devolve o último elemento |
 | `removerInicio()` | fila dupla | tira e devolve o primeiro elemento |
 | `pegar(c)` | dicionário | devolve o valor da chave `c`, ou nulo se ela não existir |
 | `atualizar(d)` | dicionário | copia as chaves do dicionário `d` |
-| `expandir(l)` | lista, fila dupla | coloca no fim todos os elementos de `l` |
-| `limpar()` | lista, dicionário, fila dupla | remove todos os elementos |
-| `tamanho()` | texto, lista, dicionário, filas | número de elementos |
+| `expandir(l)` | lista, lista com tipo, fila dupla | coloca no fim todos os elementos de `l` |
+| `limpar()` | lista, lista com tipo, dicionário, fila dupla | remove todos os elementos |
+| `tamanho()` | texto, lista, lista com tipo, vetor, dicionário, filas | número de elementos |
+| `inserir(p, v)` | lista com tipo | coloca `v` na posição `p` (de `0` a `tamanho()`) |
+| `remover(v)` | lista com tipo | remove a primeira ocorrência de `v` |
+| `removerEm(p)` | lista com tipo | tira e devolve o elemento da posição `p` |
+| `buscar(v)` | lista com tipo, vetor | devolve a posição de `v`, ou `-1` se ele não estiver lá |
+| `contem(v)` | lista com tipo, vetor | `verdadeiro` se `v` estiver na coleção |
+| `ordenar()` | lista com tipo, vetor | ordena do menor para o maior (textos em ordem alfabética) |
 | `inserir(v)` | fila de prioridade | coloca `v` na fila |
 | `remover()` | fila de prioridade | tira e devolve o menor valor |
 | `espiar()` | fila de prioridade | devolve o menor valor sem tirar (nulo se a fila estiver vazia) |
@@ -1431,9 +1542,30 @@ Erro semântico na linha 4, coluna 9: a variável "nivelForca" não foi declarad
 
 A gramática está certa, mas `nivelForca` nunca foi declarada. Para corrigir, declare-a no `var` (como no exemplo "ControleDeAcesso" da seção 5).
 
+Listas escritas direto no código e atribuídas a um `vetor` ou a uma `lista de T` também são conferidas nesta fase:
+
+```portugol nao-executar
+algoritmo "NotasErradas"
+
+var
+    notas: vetor[3] de inteiro
+
+inicio
+    notas <- [8, "sete", 9]
+fim_algoritmo
+```
+
+```text
+Erro semântico na linha 7, coluna 18: "notas" só aceita valores do tipo inteiro; este valor é do tipo cadeia
+```
+
+Com o número errado de elementos, a mensagem é `o vetor "notas" tem 3 posições, mas a lista tem 2 elementos`.
+
 ### Erros durante a execução
 
 Se o programa compila, mas algo dá errado enquanto ele roda (dividir por zero, acessar uma posição que não existe na lista, digitar texto num `leia` de `inteiro`), quem mostra o erro é o Python, em inglês. Por exemplo, `escreva(1 / 0)` compila, mas para com `ZeroDivisionError: division by zero`.
+
+A exceção são o `vetor` e a `lista de T`: os erros deles durante a execução têm mensagem em português, como `índice 5 fora do vetor de tamanho 5 (use de 0 a 4)`, `a lista só aceita valores do tipo inteiro; recebeu "Ana"` ou `o valor 9 não está na lista`.
 
 ## 12. Palavras reservadas e limitações conhecidas
 
@@ -1455,7 +1587,7 @@ As formas acentuadas `então`, `senão`, `não`, `faça` e `até` também são a
 
 Não são reservadas, mas têm um significado especial:
 
-- `lista` e `logico` são tipos só depois do `:` e do `novo` (seção 2);
+- `lista`, `logico` e `vetor` são tipos só depois do `:` (e `lista` também depois do `novo`, seção 2);
 - `verdadeiro`, `falso`, `pi` e os nomes das funções nativas podem ser redeclarados, mas aí deixam de funcionar como nativos (seção 7);
 - `self` é o próprio objeto dentro de um método.
 

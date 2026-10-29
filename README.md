@@ -164,6 +164,29 @@ Regras:
 * **Nomes:** uma local não pode ter o nome de uma variável global, de um parâmetro, de outra local do mesmo corpo, de uma função, de uma classe nem ser `self`.
 * **Ordem:** usar a variável antes da linha do `var` é erro (`a variável "x" foi usada antes de ser declarada`).
 
+### 4. Vetores e listas com tipo
+
+`vetor[N] de T` guarda exatamente `N` valores do tipo `T`. `lista de T` cresce e diminui, mas só aceita valores do tipo `T`. `T` pode ser `inteiro`, `real`, `cadeia` ou `logico`. Um valor de outro tipo, um índice fora do vetor ou um `adicionar` num vetor param o programa com uma mensagem em português.
+
+```portugol
+algoritmo "Boletim"
+
+var
+    notas: vetor[3] de inteiro
+    aprovados: lista de cadeia
+
+inicio
+    notas <- [8, 5, 9]
+    escreva("primeira nota: ", notas[0])
+    aprovados.adicionar("Bruno")
+    aprovados.inserir(0, "Ana")
+    aprovados.ordenar()
+    escreva(aprovados.tamanho(), " aprovados")
+fim_algoritmo
+```
+
+A `lista` sem `de T` continua aceitando qualquer valor. Os detalhes estão na seção "Coleções" do [Guia da Linguagem](docs/guia-da-linguagem.md#6-coleções).
+
 
 
 ## 🙌 Credits
