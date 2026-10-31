@@ -16,4 +16,4 @@
 - [x] 3.1 Rodar a suíte completa: 379 testes passando, 2 pulados.
 - [x] 3.2 Comparar o Python gerado antes e depois para `exemplos/`, `meuPia/input/` e os desafios: 20 de 20 idênticos.
 - [x] 3.3 Atualizar `docs/referencia-do-dialeto.md`.
-- [ ] 3.4 Sincronizar as specs principais e arquivar o change.
+- [x] 3.4 Sincronizar as specs principais e arquivar o change.
