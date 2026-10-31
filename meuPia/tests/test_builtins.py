@@ -90,3 +90,60 @@ def test_escreva_logico_entre_varios_argumentos():
 
 def test_escreva_concatenacao_com_mais():
     assert executar(programa('n <- 2\nescreva("n=" + n)', var='n: inteiro')) == 'n=2'
+
+
+# --- filaPrioridade como funcao nativa ---
+
+def test_fila_prioridade_sem_novo():
+    codigo = programa('f <- filaPrioridade()\nf.inserir(3)\nf.inserir(1)\nescreva(f.remover())', var='f: inteiro')
+    assert executar(codigo) == '1'
+
+
+def test_fila_prioridade_sem_novo_em_expressao():
+    assert executar(programa('escreva(tamanho(filaPrioridade()))')) == '0'
+
+
+# --- Metodos de classe com nome de metodo de colecao ---
+
+CLASSE_PILHA = '''classe Pilha
+metodo construtor()
+self.itens <- []
+fim_funcao
+metodo adicionar(v)
+self.itens.adicionar(v)
+fim_funcao
+metodo removerFim()
+retorne self.itens.removerFim()
+fim_funcao
+metodo tamanho()
+retorne tamanho(self.itens)
+fim_funcao
+fim_classe'''
+
+
+def test_metodo_de_classe_com_nome_de_metodo_de_colecao():
+    corpo = 'p <- novo Pilha()\np.adicionar(1)\np.adicionar(2)\nescreva(p.removerFim(), p.tamanho())'
+    assert executar(programa(corpo, var='p: inteiro', antes=CLASSE_PILHA)) == '21'
+
+
+def test_metodo_tamanho_de_classe_funciona_com_tamanho_nativo():
+    corpo = 'p <- novo Pilha()\np.adicionar(7)\nescreva(tamanho(p))'
+    assert executar(programa(corpo, var='p: inteiro', antes=CLASSE_PILHA)) == '1'
+
+
+def test_metodo_de_classe_nao_muda_metodos_de_lista():
+    corpo = 'p <- novo Pilha()\nl <- [1]\nl.adicionar(2)\np.adicionar(3)\nescreva(tamanho(l), p.tamanho())'
+    assert executar(programa(corpo, var='p: inteiro\nl: lista', antes=CLASSE_PILHA)) == '21'
+
+
+def test_metodo_chamado_de_dentro_da_classe():
+    antes = '''classe C
+metodo construtor()
+self.n <- 0
+self.adicionar(5)
+fim_funcao
+metodo adicionar(v)
+self.n <- self.n + v
+fim_funcao
+fim_classe'''
+    assert executar(programa('c <- novo C()\nescreva(c.n)', var='c: inteiro', antes=antes)) == '5'

@@ -105,3 +105,30 @@ def test_string_nao_terminada():
     with pytest.raises(LexicalError) as excinfo:
         compilar(codigo)
     assert (excinfo.value.linha, excinfo.value.coluna) == (3, 9)
+
+
+# --- Tipos com maiusculas ---
+
+def test_tipos_com_maiusculas_tem_valor_inicial_do_tipo():
+    codigo = programa('escreva(a + 1)\nescreva(r)\nescreva(tamanho(s), tamanho(d))',
+                      var='a: INTEIRO\nr: Real\ns: Cadeia\nd: DICIONARIO')
+    assert executar(codigo) == '1\n0.0\n00'
+
+
+def test_leia_em_tipo_com_maiusculas_converte_pelo_tipo():
+    codigo = programa('leia(n)\nescreva(n + 1)', var='n: Inteiro')
+    assert executar(codigo, entrada='41') == '42'
+
+
+def test_local_com_tipo_em_maiusculas():
+    assert executar(programa('var x: Float\nescreva(x)')) == '0.0'
+
+
+def test_colecao_tipada_com_elemento_em_maiusculas():
+    codigo = programa('l.adicionar(2)\nescreva(l)', var='l: lista de Real')
+    assert executar(codigo) == '[2.0]'
+
+
+def test_novo_dicionario_com_maiusculas():
+    codigo = programa('d <- novo Dicionario()\nd["a"] <- 1\nescreva(tamanho(d))', var='d: dicionario')
+    assert executar(codigo) == '1'

@@ -130,3 +130,26 @@ def test_variavel_local_aceita_depois_da_declaracao():
 def test_var_local_nao_vira_global():
     codigo = programa('escreva(t)', antes='funcao f()\nvar t: inteiro\nfim_funcao')
     assert '"t"' in erro_de(codigo, SemanticError)
+
+
+# --- Metodos repetidos na mesma classe ---
+
+def test_metodos_sinonimos_na_mesma_classe():
+    antes = 'classe C\nmetodo adicionar(v)\nfim_funcao\nmetodo adicionarFim(v)\nfim_funcao\nfim_classe'
+    with pytest.raises(SemanticError) as excinfo:
+        compilar(programa('', antes=antes))
+    assert (excinfo.value.linha, excinfo.value.coluna) == (5, 8)
+    assert '"adicionar"' in str(excinfo.value) and '"adicionarFim"' in str(excinfo.value)
+
+
+def test_metodo_declarado_duas_vezes_na_mesma_classe():
+    antes = 'classe C\nmetodo m()\nfim_funcao\nmetodo m()\nfim_funcao\nfim_classe'
+    with pytest.raises(SemanticError) as excinfo:
+        compilar(programa('', antes=antes))
+    assert (excinfo.value.linha, excinfo.value.coluna) == (5, 8)
+    assert '"m"' in str(excinfo.value)
+
+
+def test_mesmo_metodo_em_classes_diferentes():
+    antes = 'classe A\nmetodo adicionar(v)\nfim_funcao\nfim_classe\nclasse B\nmetodo adicionarFim(v)\nfim_funcao\nfim_classe'
+    compilar(programa('', antes=antes))

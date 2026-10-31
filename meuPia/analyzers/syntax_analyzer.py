@@ -54,6 +54,11 @@ class Parser:
     # '=' e tokenizado como ATR; dentro de expressoes significa comparacao
     return self.check_token(TokenEnum.ATR) and self.current_lexeme() == '='
 
+  def is_chamada_fila_prioridade(self) -> bool:
+    # 'filaPrioridade' e tipo para o lexer; seguido de '(' e a funcao nativa que cria a fila
+    return self.check_token(TokenEnum.TIPO) and self.current_lexeme().lower() == 'filaprioridade' \
+      and self.peek_next_token() == TokenEnum.PARAB.name
+
   def check_token_any(self, expected: List[TokenEnum]) -> bool:
     return any(self.current_token() == t.name for t in expected)
 
@@ -259,6 +264,8 @@ class Parser:
       self.expect_token(TokenEnum.ID)
     else:
       self.expect_token(TokenEnum.TIPO)
+      # O lexer aceita tipos em qualquer caixa (INTEIRO, Real); o resto do compilador usa a forma minuscula
+      descricao['tipo'] = tipo.lower()
     return descricao
 
   def grammar_tipo_elemento(self) -> str:
@@ -266,7 +273,7 @@ class Parser:
     if not (self.check_token_any([TokenEnum.TIPO, TokenEnum.ID]) and elemento.lower() in TIPOS_ELEMENTO):
       raise self.erro('o tipo dos elementos precisa ser inteiro, real, float, cadeia, string ou logico')
     self.pos += 1
-    return elemento
+    return elemento.lower()
 
   def grammar_command_escreva(self):
     self.expect_token(TokenEnum.ESCREVA)
@@ -433,6 +440,11 @@ class Parser:
           self.expect_token(TokenEnum.ID)
           
       self.grammar_arguments(TokenEnum.PARAB, TokenEnum.PARFE)
+
+    elif self.is_chamada_fila_prioridade():
+      self.expect_token(TokenEnum.TIPO)
+      self.grammar_arguments(TokenEnum.PARAB, TokenEnum.PARFE)
+      self.grammar_cauda()
 
     elif self.check_token(TokenEnum.NUMINT):
       self.expect_token(TokenEnum.NUMINT)

@@ -578,7 +578,7 @@ class CodeGenerator:
                 l = self.map_identifier(l, after_dot=(last_token_type == TokenEnum.PONTO.name))
             elif t == TokenEnum.TIPO.name:
                 if l.lower() == "filaprioridade": l = "FilaPrioridade"
-                elif l == "dicionario": l = "dict"
+                elif l.lower() == "dicionario": l = "dict"
             elif t == TokenEnum.LOGIGUAL.name: l = "=="
             elif t == TokenEnum.OPMOD.name: l = "%"
             elif t == TokenEnum.LOGDIFF.name: l = "!="
@@ -724,10 +724,13 @@ class CodeGenerator:
                 
         self.advance() # )
         
-        # Mapeia 'construtor' para o padrão Python
+        # Mapeia 'construtor' para o padrão Python. Nomes de metodo de colecao (adicionar, tamanho...)
+        # sao traduzidos como nas chamadas 'obj.nome', senao a chamada nao acharia o metodo
         if func_name == "construtor":
             func_name = "__init__"
-            
+        else:
+            func_name = METODOS.get(func_name, func_name)
+
         self.add_line(f"def {func_name}({', '.join(params)}):")
         self.params_atuais = set(params)
         self.indent_level += 1 

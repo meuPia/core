@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from ..utils.builtins import CONSTANTES_BUILTIN, FUNCOES_BUILTIN
+from ..utils.builtins import CONSTANTES_BUILTIN, FUNCOES_BUILTIN, METODOS
 from ..utils.erros import ErroCompilacao, posicao
 from ..utils.token_enum import TokenEnum
 from .syntax_analyzer import Parser
@@ -105,6 +105,7 @@ class SemanticAnalyzer:
         self.enter_body(set())
 
       elif self.check_token(TokenEnum.CLASSE):
+        self.validate_class_methods()
         self.advance() # Passa o nome da classe
 
       elif self.check_token_any([TokenEnum.FUNCAO, TokenEnum.METODO]):
@@ -142,6 +143,25 @@ class SemanticAnalyzer:
         self.validate_identifier()
 
       self.advance()
+
+  def validate_class_methods(self):
+    # Dois metodos da mesma classe com o mesmo nome no Python: o segundo apagaria o primeiro.
+    # Isso inclui sinonimos como adicionar/adicionarFim, que viram ambos 'append'
+    classe = self.lexeme_pairs[self.pos + 1]['lexeme']
+    vistos = {} # nome no Python -> nome escrito no meuPia
+    j = self.pos
+    while self.token_at(j) not in (TokenEnum.FIMCLASSE.name, TokenEnum.END_OF_FILE.name):
+      if self.token_at(j) == TokenEnum.METODO.name:
+        nome = self.lexeme_pairs[j + 1]['lexeme']
+        nome_python = '__init__' if nome == 'construtor' else METODOS.get(nome, nome)
+        anterior = vistos.get(nome_python)
+        if anterior == nome:
+          raise self.erro_em(f'o método "{nome}" foi declarado mais de uma vez na classe "{classe}"', j + 1)
+        if anterior:
+          raise self.erro_em(f'os métodos "{anterior}" e "{nome}" são o mesmo método no meuPiá; '
+                             'escolha outro nome para um deles', j + 1)
+        vistos[nome_python] = nome
+      j += 1
 
   def enter_body(self, params: set):
     # Novo corpo (funcao, metodo ou inicio): so os parametros sao visiveis no comeco
